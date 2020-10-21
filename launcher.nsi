@@ -7,6 +7,5 @@ ShowInstDetails hide
 OutFile "launcher.exe"
 
 Section
-  StrCpy $INSTDIR `$PROFILE\pdx_unlimiter\launcher`
-  nsExec::Exec '$INSTDIR\bin\updater.bat'
+  nsExec::Exec 'bin\updater.bat'
 SectionEnd

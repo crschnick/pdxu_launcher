@@ -15,7 +15,7 @@ public class UpdaterGui extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setUndecorated(true);
         try {
-            Image icon = ImageIO.read(Updater.class.getResource("icon.png"));
+            Image icon = ImageIO.read(Updater.class.getResource("logo.png"));
             setIconImage(icon);
             image = ImageIO.read(Updater.class.getResource("splash.png"));
         } catch (IOException e) {

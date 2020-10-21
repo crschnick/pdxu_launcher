@@ -30,6 +30,10 @@ Function checkReinstall
        Abort
      Reinstall:
        RMDir /r $LAUNCHERDIR
+       ${If} ${Errors}
+         MessageBox MB_OK "Error deleting files"
+         Abort
+       ${EndIf}
   ${EndIf}
 FunctionEnd
 
@@ -41,6 +45,11 @@ Section
     File /oname=bin\sentry.properties sentry_prod.properties
     File build\bin\launcher.exe
 
+   ${If} ${Errors}
+     MessageBox MB_OK "Error installing files"
+     Abort
+   ${EndIf}
+
     CreateShortCut "$INSTDIR\Pdx-Unlimiter.lnk" "$LAUNCHERDIR\launcher.exe" "" `$LAUNCHERDIR\logo.ico` 0
 
     MessageBox MB_YESNO "Create desktop shortcut?" IDNO No
@@ -49,5 +58,6 @@ Section
 SectionEnd
 
 Function .onInstSuccess
-  nsExec::Exec "$LAUNCHERDIR\launcher.exe -installed"
+  SetOutPath $LAUNCHERDIR
+  Exec "$LAUNCHERDIR\launcher.exe -installed"
 FunctionEnd

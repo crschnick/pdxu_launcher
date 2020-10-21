@@ -18,10 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -31,9 +28,17 @@ public class Updater {
     public static void main(String[] args) {
         Path dir = null;
         try {
-            dir = Optional.ofNullable(System.getProperty("pdxu.installDir"))
-                    .map(Path::of)
-                    .orElse(Path.of(Updater.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParent().getParent());
+            var iDir = Optional.ofNullable(System.getProperty("pdxu.installDir"));
+            if (iDir.isPresent()) {
+                dir = Path.of(iDir.get());
+            } else {
+                Path jdkHome = Path.of(System.getProperty("java.home"));
+                if (jdkHome.toFile().getName().equals("launcher")) {
+                    dir = jdkHome.getParent();
+                } else {
+                    throw new NoSuchElementException("Missing property value for pdxu.installDir");
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return;
@@ -88,10 +93,10 @@ public class Updater {
     }
 
     private static void run(Path dir) throws IOException {
-        ProcessBuilder builder = new ProcessBuilder(
-                List.of("cmd.exe", "/C", dir.resolve("app").resolve("bin").resolve("pdxu.bat").toString()));
-        builder.redirectErrorStream(true);
-        builder.start();
+        Path workDir = dir.resolve("app");
+        new ProcessBuilder(List.of("cmd.exe", "/C", workDir.resolve("bin").resolve("pdxu.bat").toString()))
+                .directory(workDir.toFile())
+                .start();
     }
 
     private static void initErrorHandler(Path p)  {
