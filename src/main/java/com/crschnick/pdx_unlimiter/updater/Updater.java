@@ -123,14 +123,21 @@ public class Updater {
     }
 
     private static boolean requiresUpdate(Info info, Path p) {
-        Instant i = Instant.MIN;
+        Optional<Instant> i = Optional.empty();
+        String v = "";
         Path f = p.resolve("update");
         try {
-            i = Instant.parse(Files.readString(f));
+            v = Files.readString(p.resolve("version"));
+            i = Optional.of(Instant.parse(Files.readString(f)));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return i.compareTo(info.timestamp) < 0;
+
+        if (i.isEmpty()) {
+            return !v.equals(info.version) ;
+        } else {
+            return i.get().compareTo(info.timestamp) < 0;
+        }
     }
 
     public static void deleteOldVersion(Path path) throws Exception {
