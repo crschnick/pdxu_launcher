@@ -1,5 +1,8 @@
 import com.github.langmo.gradlensis.GradleNsisTask
 
+import java.nio.file.Files
+import java.nio.file.Path
+
 plugins {
     id 'idea'
     id 'application'
@@ -103,8 +106,13 @@ createRuntimeImage {
     noHeaderFiles = true
     noManPages = true
 }
-
 createRuntimeImage.dependsOn(build)
+
+task writeVersion(type: DefaultTask) {
+    Files.write(Path.of("${buildDir}/image/version"), String.valueOf(version).getBytes())
+}
+createRuntimeImage.finalizedBy(writeVersion)
+
 
 
 task createLauncherExe(type: GradleNsisTask) {

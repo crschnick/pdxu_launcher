@@ -11,37 +11,39 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Updater {
 
+    private static void exception(Exception e) {
+        Sentry.capture(e);
+        LoggerFactory.getLogger(Updater.class).error("Error occured", e);
+    }
+
     public static void main(String[] args) {
         Path dir = null;
-        try {
-            var iDir = Optional.ofNullable(System.getProperty("pdxu.installDir"));
-            if (iDir.isPresent()) {
-                dir = Path.of(iDir.get());
+        var iDir = Optional.ofNullable(System.getProperty("pdxu.installDir"));
+        if (iDir.isPresent()) {
+            dir = Path.of(iDir.get());
+        } else {
+            Path jdkHome = Path.of(System.getProperty("java.home"));
+            if (jdkHome.toFile().getName().equals("launcher")) {
+                dir = jdkHome.getParent();
             } else {
-                Path jdkHome = Path.of(System.getProperty("java.home"));
-                if (jdkHome.toFile().getName().equals("launcher")) {
-                    dir = jdkHome.getParent();
-                } else {
-                    throw new NoSuchElementException("Missing property value for pdxu.installDir");
-                }
+                throw new NoSuchElementException("Missing property value for pdxu.installDir");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
         }
 
         initErrorHandler(dir);
@@ -52,9 +54,8 @@ public class Updater {
                     dir.resolve("app"),
                     dir.resolve("app"),
                     true);
-        } catch (Throwable t) {
-            Sentry.capture(t);
-            t.printStackTrace();
+        } catch (Exception e) {
+            exception(e);
         }
 
 
@@ -64,9 +65,8 @@ public class Updater {
                     dir.resolve("achievements"),
                     dir.resolve("achievements"),
                     false);
-        } catch (Throwable t) {
-            Sentry.capture(t);
-            t.printStackTrace();
+        } catch (Exception e) {
+            exception(e);
         }
 
 
@@ -76,16 +76,14 @@ public class Updater {
                     dir.resolve("launcher_new"),
                     dir.resolve("launcher"),
                     true);
-        } catch (Throwable t) {
-            Sentry.capture(t);
-            t.printStackTrace();
+        } catch (Exception e) {
+            exception(e);
         }
 
         try {
             run(dir);
-        } catch (IOException e) {
-            Sentry.capture(e);
-            e.printStackTrace();
+        } catch (Exception e) {
+            exception(e);
         }
 
         frame.dispose();
@@ -99,7 +97,7 @@ public class Updater {
                 .start();
     }
 
-    private static void initErrorHandler(Path p)  {
+    private static void initErrorHandler(Path p) {
         p.resolve("logs").toFile().mkdirs();
         System.setProperty("org.slf4j.simpleLogger.logFile", p.resolve("logs").resolve("updater.log").toString());
         System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
@@ -121,7 +119,6 @@ public class Updater {
         deleteOldVersion(out);
         unzip(pathToNewest, out);
         Files.write(out.resolve("update"), info.timestamp.toString().getBytes());
-        Files.write(out.resolve("version"), info.version.getBytes());
         frame.setVisible(false);
     }
 
