@@ -1,8 +1,5 @@
 import com.github.langmo.gradlensis.GradleNsisTask
 
-import java.nio.file.Files
-import java.nio.file.Path
-
 plugins {
     id 'idea'
     id 'application'
@@ -10,7 +7,7 @@ plugins {
     id "org.moditect.gradleplugin" version "1.0.0-rc3"
 }
 
-version '1.0-rc2'
+version '1.0-rc3'
 
 java {
     modularity.inferModulePath = true
@@ -109,7 +106,10 @@ createRuntimeImage {
 createRuntimeImage.dependsOn(build)
 
 task writeVersion(type: DefaultTask) {
-    Files.write(Path.of("${buildDir}/image/version"), String.valueOf(version).getBytes())
+    doLast {
+        mkdir file("${buildDir}/image")
+        file("${buildDir}/image/version").write(version)
+    }
 }
 createRuntimeImage.finalizedBy(writeVersion)
 
