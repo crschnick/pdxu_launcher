@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.Sentry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -26,10 +27,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Updater {
+    private static Logger logger = LoggerFactory.getLogger(Updater.class);
 
     private static void exception(Exception e) {
         Sentry.capture(e);
-        LoggerFactory.getLogger(Updater.class).error("Error occured", e);
+        logger.error("Error occured", e);
     }
 
     public static void main(String[] args) {
@@ -46,7 +48,13 @@ public class Updater {
             }
         }
 
-        initErrorHandler(dir);
+        try {
+            initErrorHandler(dir);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
+
         UpdaterGui frame = new UpdaterGui();
         try {
             update(frame,
@@ -92,34 +100,43 @@ public class Updater {
 
     private static void run(Path dir) throws IOException {
         Path workDir = dir.resolve("app");
-        new ProcessBuilder(List.of("cmd.exe", "/C", workDir.resolve("bin").resolve("pdxu.bat").toString()))
+        String cmd = workDir.resolve("bin").resolve("pdxu.bat").toString();
+        logger.info("Running: " + cmd);
+        new ProcessBuilder(List.of("cmd.exe", "/C", cmd))
                 .directory(workDir.toFile())
                 .start();
     }
 
-    private static void initErrorHandler(Path p) {
-        p.resolve("logs").toFile().mkdirs();
+    private static void initErrorHandler(Path p) throws IOException {
+        FileUtils.forceMkdir(p.resolve("logs").toFile());
         System.setProperty("org.slf4j.simpleLogger.logFile", p.resolve("logs").resolve("updater.log").toString());
         System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
         System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
-        Sentry.init();
         LoggerFactory.getLogger(Updater.class).info("Initializing updater at " + p.toString());
+        Sentry.init();
     }
 
     private static void update(UpdaterGui frame, URL url, Path out, Path checkDir, boolean platformSpecific) throws Exception {
         byte[] response = executeGet(url, 0, null);
 
         Info info = getDownloadInfo(platformSpecific, new String(response));
+        logger.info("Download info: " + info.toString());
         if (!requiresUpdate(info, checkDir)) {
             return;
         }
 
         frame.setVisible(true);
+        logger.info("Downloading " + info.url.toString());
         Path pathToNewest = downloadNewestVersion(info.url, info.size, frame::setProgress);
+        logger.info("Download complete");
+        logger.info("Deleting old version");
         deleteOldVersion(out);
+        logger.info("Unzipping new version");
         unzip(pathToNewest, out);
+        logger.info("Writing update timestamp");
         Files.write(out.resolve("update"), info.timestamp.toString().getBytes());
         frame.setVisible(false);
+        logger.info("Update completed for " + out.getFileName().toString());
     }
 
     private static boolean requiresUpdate(Info info, Path p) {
@@ -169,6 +186,7 @@ public class Updater {
 
     public static Path downloadNewestVersion(URL url, int size, Consumer<Float> c) throws Exception {
         byte[] file = executeGet(url, size, c);
+        c.accept(0.0f);
         String tempDir = System.getProperty("java.io.tmpdir");
         Path path = Paths.get(tempDir, url.getFile());
         FileUtils.forceMkdirParent(path.toFile());
@@ -239,5 +257,16 @@ public class Updater {
         public Instant timestamp;
         public String body;
         public String version;
+
+        @Override
+        public String toString() {
+            return "Info{" +
+                    "url=" + url +
+                    ", size=" + size +
+                    ", timestamp=" + timestamp +
+                    ", body='" + body + '\'' +
+                    ", version='" + version + '\'' +
+                    '}';
+        }
     }
 }
