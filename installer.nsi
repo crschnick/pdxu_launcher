@@ -8,6 +8,16 @@ Unicode True
 RequestExecutionLevel user
 OutFile "pdxu_installer.exe"
 
+VIProductVersion                 "1.0.0.0"
+VIAddVersionKey ProductName      "Pdx-Unlimiter"
+VIAddVersionKey Comments         "Pdx-Unlimiter installer"
+VIAddVersionKey CompanyName      "https://github.com/crschnick/pdx_unlimiter/"
+VIAddVersionKey FileDescription  "Pdx-Unlimiter installer"
+VIAddVersionKey FileVersion      1
+VIAddVersionKey ProductVersion   1
+VIAddVersionKey InternalName     "Pdx-Unlimiter"
+VIAddVersionKey OriginalFilename "pdxu_installer.exe"
+
  Function .onInit
   StrCpy $INSTDIR `$PROFILE\pdx_unlimiter`
  FunctionEnd
@@ -42,7 +52,6 @@ Section
     SetOutPath $LAUNCHERDIR
     File /r "build\image\*"
     File "logo.ico"
-    File /oname=bin\sentry.properties sentry_prod.properties
     File build\bin\launcher.exe
 
    ${If} ${Errors}

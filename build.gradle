@@ -7,7 +7,12 @@ plugins {
     id "org.moditect.gradleplugin" version "1.0.0-rc3"
 }
 
-version '1.0-rc3'
+version '1.0-rc4'
+
+if (!System.getProperty("java.runtime.name").contains("OpenJDK")) {
+    println "OpenJDK is required!"
+    return
+}
 
 java {
     modularity.inferModulePath = true
@@ -113,14 +118,12 @@ task writeVersion(type: DefaultTask) {
 }
 createRuntimeImage.finalizedBy(writeVersion)
 
-
-
 task createLauncherExe(type: GradleNsisTask) {
     configuration = file("launcher.nsi")
     runIn = file("${projectDir}")
     destinationFolder = file("${buildDir}/bin")
 }
-createLauncherExe.dependsOn(createRuntimeImage)
+createRuntimeImage.finalizedBy(createLauncherExe)
 
 
 task createInstallerExe(type: GradleNsisTask) {
@@ -132,12 +135,23 @@ createInstallerExe.dependsOn(createLauncherExe)
 
 task zipImage(type: Zip) {
     destinationDirectory = buildDir
-    archivesBaseName = "pdxu_launcher"
+    archiveBaseName = "pdxu_launcher"
     archiveAppendix = "windows"
+    archiveVersion = ""
     from "${buildDir}/image"
+    from "${projectDir}/logo.ico"
+    from "${projectDir}/logo.ico"
+    from "${buildDir}/bin/launcher.exe"
 }
 zipImage.dependsOn(createRuntimeImage)
 
+task zipInstaller(type: Zip) {
+    destinationDirectory = buildDir
+    archiveBaseName = "pdxu_installer"
+    from "${buildDir}/bin/pdxu_installer.exe"
+}
+zipInstaller.dependsOn(createInstallerExe)
+
 task createDist(type: DefaultTask)
 createDist.dependsOn(zipImage)
-createDist.dependsOn(createInstallerExe)
+createDist.dependsOn(zipInstaller)

@@ -3,6 +3,8 @@ package com.crschnick.pdx_unlimiter.updater;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.Sentry;
+import io.sentry.SentryClientFactory;
+import io.sentry.SentryOptions;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
@@ -27,7 +29,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Updater {
-    private static Logger logger = LoggerFactory.getLogger(Updater.class);
+    private static Logger logger;
 
     private static void exception(Exception e) {
         Sentry.capture(e);
@@ -35,6 +37,8 @@ public class Updater {
     }
 
     public static void main(String[] args) {
+        boolean prod = false;
+        String version = "none";
         Path dir = null;
         var iDir = Optional.ofNullable(System.getProperty("pdxu.installDir"));
         if (iDir.isPresent()) {
@@ -43,13 +47,20 @@ public class Updater {
             Path jdkHome = Path.of(System.getProperty("java.home"));
             if (jdkHome.toFile().getName().equals("launcher")) {
                 dir = jdkHome.getParent();
+                prod = true;
+                try {
+                    version = Files.readString(dir.resolve("launcher").resolve("version"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             } else {
                 throw new NoSuchElementException("Missing property value for pdxu.installDir");
             }
         }
 
+
         try {
-            initErrorHandler(dir);
+            initErrorHandler(prod, version, dir);
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -58,7 +69,8 @@ public class Updater {
         UpdaterGui frame = new UpdaterGui();
         try {
             update(frame,
-                    new URL("https://api.github.com/repos/crschnick/pdx_unlimiter/releases/latest"),
+                    new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
+                    "pdx_unlimiter",
                     dir.resolve("app"),
                     dir.resolve("app"),
                     true);
@@ -69,7 +81,8 @@ public class Updater {
 
         try {
             update(frame,
-                    new URL("https://api.github.com/repos/crschnick/pdxu_achievements/releases/latest"),
+                    new URL("https://github.com/crschnick/pdxu_achievements/releases/latest/download/"),
+                    "pdxu_achievements",
                     dir.resolve("achievements"),
                     dir.resolve("achievements"),
                     false);
@@ -80,7 +93,8 @@ public class Updater {
 
         try {
             update(frame,
-                    new URL("https://api.github.com/repos/crschnick/pdxu_launcher/releases/latest"),
+                    new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
+                    "pdxu_launcher",
                     dir.resolve("launcher_new"),
                     dir.resolve("launcher"),
                     true);
@@ -99,42 +113,55 @@ public class Updater {
     }
 
     private static void run(Path dir) throws IOException {
-        Path workDir = dir.resolve("app");
-        String cmd = workDir.resolve("bin").resolve("pdxu.bat").toString();
+        String cmd = dir.resolve("app").resolve("bin").resolve("pdxu.bat").toString();
         logger.info("Running: " + cmd);
         new ProcessBuilder(List.of("cmd.exe", "/C", cmd))
-                .directory(workDir.toFile())
                 .start();
     }
 
-    private static void initErrorHandler(Path p) throws IOException {
-        FileUtils.forceMkdir(p.resolve("logs").toFile());
-        System.setProperty("org.slf4j.simpleLogger.logFile", p.resolve("logs").resolve("updater.log").toString());
+    private static void initErrorHandler(boolean prod, String version, Path p) throws IOException {
+        System.setProperty("sentry.dsn", "https://f86d7649617d4c9cb95db5a19811305b@o462618.ingest.sentry.io/5468640");
+        System.setProperty("sentry.stacktrace.hidecommon", "false");
+        System.setProperty("sentry.stacktrace.app.packages", "");
+        System.setProperty("sentry.uncaught.handler.enabled", "true");
+        if (prod) {
+            FileUtils.forceMkdir(p.resolve("logs").toFile());
+            var l = p.resolve("logs").resolve("updater.log");
+            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
+            System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
+            System.setProperty("sentry.environment", "production");
+            System.setProperty("sentry.version", version);
+        } else {
+            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+            System.setProperty("sentry.environment", "dev");
+        }
         System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
         System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
-        LoggerFactory.getLogger(Updater.class).info("Initializing updater at " + p.toString());
+
+        logger  = LoggerFactory.getLogger(Updater.class);
+
+        logger.info("Initializing updater at " + p.toString() + ", is production: " + prod);
+        logger.info("Writing to log file " + p.resolve("logs").resolve("updater.log").toString());
+        logger.info("Working directory: " + System.getProperty("user.dir"));
         Sentry.init();
     }
 
-    private static void update(UpdaterGui frame, URL url, Path out, Path checkDir, boolean platformSpecific) throws Exception {
-        byte[] response = executeGet(url, 0, null);
-
-        Info info = getDownloadInfo(platformSpecific, new String(response));
+    private static void update(UpdaterGui frame, URL url, String assetName, Path out, Path checkDir, boolean platformSpecific) throws Exception {
+        Info info = getInfo(url, assetName, platformSpecific);
         logger.info("Download info: " + info.toString());
         if (!requiresUpdate(info, checkDir)) {
+            logger.info("No update required");
             return;
         }
 
         frame.setVisible(true);
         logger.info("Downloading " + info.url.toString());
-        Path pathToNewest = downloadNewestVersion(info.url, info.size, frame::setProgress);
+        Path pathToNewest = downloadNewestVersion(info.url, frame::setProgress);
         logger.info("Download complete");
         logger.info("Deleting old version");
         deleteOldVersion(out);
         logger.info("Unzipping new version");
         unzip(pathToNewest, out);
-        logger.info("Writing update timestamp");
-        Files.write(out.resolve("update"), info.timestamp.toString().getBytes());
         frame.setVisible(false);
         logger.info("Update completed for " + out.getFileName().toString());
     }
@@ -142,19 +169,14 @@ public class Updater {
     private static boolean requiresUpdate(Info info, Path p) {
         Optional<Instant> i = Optional.empty();
         String v = "";
-        Path f = p.resolve("update");
         try {
             v = Files.readString(p.resolve("version"));
-            i = Optional.of(Instant.parse(Files.readString(f)));
         } catch (IOException e) {
-            e.printStackTrace();
+            exception(e);
+            return true;
         }
 
-        if (i.isEmpty()) {
-            return !v.equals(info.version) ;
-        } else {
-            return i.get().compareTo(info.timestamp) < 0;
-        }
+       return !v.equals(info.version);
     }
 
     public static void deleteOldVersion(Path path) throws Exception {
@@ -184,8 +206,8 @@ public class Updater {
         f.close();
     }
 
-    public static Path downloadNewestVersion(URL url, int size, Consumer<Float> c) throws Exception {
-        byte[] file = executeGet(url, size, c);
+    public static Path downloadNewestVersion(URL url, Consumer<Float> c) throws Exception {
+        byte[] file = executeGet(url, c);
         c.accept(0.0f);
         String tempDir = System.getProperty("java.io.tmpdir");
         Path path = Paths.get(tempDir, url.getFile());
@@ -194,36 +216,47 @@ public class Updater {
         return path;
     }
 
-    public static Info getDownloadInfo(boolean platformSpecific, String response) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(response);
-        for (JsonNode n : node.get("assets")) {
-            if (!n.get("name").textValue().endsWith(".zip")) {
-                continue;
-            }
-
-            if (!platformSpecific || (SystemUtils.IS_OS_WINDOWS && n.get("name").textValue().contains("windows"))
-                    || (SystemUtils.IS_OS_MAC && n.get("name").textValue().contains("mac"))
-                    || (SystemUtils.IS_OS_LINUX && n.get("name").textValue().contains("linux"))) {
-                Info i = new Info();
-                i.url = new URL(n.get("browser_download_url").textValue());
-                i.size = n.get("size").intValue();
-                i.timestamp = Instant.parse(n.get("updated_at").textValue());
-                i.body = node.get("body").asText();
-                i.version = node.get("tag_name").textValue();
-                return i;
-            }
-        }
-        throw new IOException("Couldn't find download url");
-    }
-
-    public static byte[] executeGet(URL targetURL, int size, Consumer<Float> progress) throws Exception {
+    public static Info getInfo(URL targetURL, String fileName, boolean platformSpecific) throws Exception {
         HttpURLConnection connection = null;
 
         try {
             //Create connection
             connection = (HttpURLConnection) targetURL.openConnection();
             connection.setRequestMethod("GET");
+            connection.addRequestProperty("User-Agent", "https://github.com/crschnick/pdxu_launcher");
+            connection.addRequestProperty("Accept", "*/*");
+            connection.setInstanceFollowRedirects(false);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != 302) {
+                throw new IOException("Got http " + responseCode + " for " + targetURL);
+            }
+
+            String suffix = platformSpecific ? ("-"
+                    + (SystemUtils.IS_OS_WINDOWS ? "windows" : (SystemUtils.IS_OS_LINUX ? "linux" : "mac"))) : "";
+            String location = connection.getHeaderField("location");
+            String version = Path.of(new URL(location).getFile()).getFileName().toString();
+            URL toDownload = new URL(location + "/" + fileName + suffix + ".zip");
+            Info i = new Info();
+            i.url = toDownload;
+            i.version = version;
+            return i;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    public static byte[] executeGet(URL targetURL, Consumer<Float> progress) throws Exception {
+        HttpURLConnection connection = null;
+
+        try {
+            //Create connection
+            connection = (HttpURLConnection) targetURL.openConnection();
+            connection.setRequestMethod("GET");
+            connection.addRequestProperty("User-Agent", "https://github.com/crschnick/pdxu_launcher");
+            connection.addRequestProperty("Accept", "*/*");
 
             int responseCode = connection.getResponseCode();
             if (responseCode != 200) {
@@ -231,9 +264,7 @@ public class Updater {
             }
 
             InputStream is = connection.getInputStream();
-            if (size == 0) {
-                return is.readAllBytes();
-            }
+            int size = Integer.parseInt(connection.getHeaderField("Content-Length"));
 
             byte[] line;
             int bytes = 0;
@@ -253,18 +284,12 @@ public class Updater {
 
     public static class Info {
         public URL url;
-        public int size;
-        public Instant timestamp;
-        public String body;
         public String version;
 
         @Override
         public String toString() {
             return "Info{" +
                     "url=" + url +
-                    ", size=" + size +
-                    ", timestamp=" + timestamp +
-                    ", body='" + body + '\'' +
                     ", version='" + version + '\'' +
                     '}';
         }
