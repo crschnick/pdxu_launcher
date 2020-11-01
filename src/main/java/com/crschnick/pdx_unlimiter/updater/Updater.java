@@ -1,10 +1,6 @@
 package com.crschnick.pdx_unlimiter.updater;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.Sentry;
-import io.sentry.SentryClientFactory;
-import io.sentry.SentryOptions;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
@@ -138,7 +134,7 @@ public class Updater {
         System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
         System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
 
-        logger  = LoggerFactory.getLogger(Updater.class);
+        logger = LoggerFactory.getLogger(Updater.class);
 
         logger.info("Initializing updater at " + p.toString() + ", is production: " + prod);
         logger.info("Writing to log file " + p.resolve("logs").resolve("updater.log").toString());
@@ -172,11 +168,10 @@ public class Updater {
         try {
             v = Files.readString(p.resolve("version"));
         } catch (IOException e) {
-            exception(e);
             return true;
         }
 
-       return !v.equals(info.version);
+        return !v.equals(info.version);
     }
 
     public static void deleteOldVersion(Path path) throws Exception {

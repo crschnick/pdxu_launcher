@@ -145,13 +145,6 @@ task zipImage(type: Zip) {
 }
 zipImage.dependsOn(createRuntimeImage)
 
-task zipInstaller(type: Zip) {
-    destinationDirectory = buildDir
-    archiveBaseName = "pdxu_installer"
-    from "${buildDir}/bin/pdxu_installer.exe"
-}
-zipInstaller.dependsOn(createInstallerExe)
-
 task createDist(type: DefaultTask)
 createDist.dependsOn(zipImage)
-createDist.dependsOn(zipInstaller)
+createDist.dependsOn(createInstallerExe)
