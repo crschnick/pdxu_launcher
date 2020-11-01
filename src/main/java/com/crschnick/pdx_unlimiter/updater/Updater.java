@@ -33,6 +33,10 @@ public class Updater {
     }
 
     public static void main(String[] args) {
+        if (isPdxuRunning()) {
+            return;
+        }
+
         boolean prod = false;
         String version = "none";
         Path dir = null;
@@ -106,6 +110,13 @@ public class Updater {
 
         frame.dispose();
 
+    }
+
+    private static boolean isPdxuRunning() {
+        var r = ProcessHandle.allProcesses()
+                .map(h -> h.info().command().orElse(""))
+                .anyMatch(s -> s.endsWith(Path.of("app", "bin", "java.exe").toString()));
+        return r;
     }
 
     private static void run(Path dir) throws IOException {
