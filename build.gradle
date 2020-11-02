@@ -1,10 +1,10 @@
-import com.github.langmo.gradlensis.GradleNsisTask
 
 plugins {
     id 'idea'
     id 'application'
     id "com.github.langmo.gradlensis" version "0.1.0"
     id "org.moditect.gradleplugin" version "1.0.0-rc3"
+    id "nebula.ospackage" version "8.4.1"
 }
 
 version '1.0-rc4'
@@ -118,33 +118,68 @@ task writeVersion(type: DefaultTask) {
 }
 createRuntimeImage.finalizedBy(writeVersion)
 
-task createLauncherExe(type: GradleNsisTask) {
-    configuration = file("launcher.nsi")
-    runIn = file("${projectDir}")
-    destinationFolder = file("${buildDir}/bin")
-}
-createRuntimeImage.finalizedBy(createLauncherExe)
 
 
-task createInstallerExe(type: GradleNsisTask) {
-    configuration = file("installer.nsi")
-    runIn = file("${projectDir}")
-    destinationFolder = file("${buildDir}/bin")
-}
-createInstallerExe.dependsOn(createLauncherExe)
-
-task zipImage(type: Zip) {
-    destinationDirectory = buildDir
-    archiveBaseName = "pdxu_launcher"
-    archiveAppendix = "windows"
-    archiveVersion = ""
-    from "${buildDir}/image"
-    from "${projectDir}/logo.ico"
-    from "${projectDir}/logo.ico"
-    from "${buildDir}/bin/launcher.exe"
-}
-zipImage.dependsOn(createRuntimeImage)
+import com.github.langmo.gradlensis.GradleNsisTask
+import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 task createDist(type: DefaultTask)
-createDist.dependsOn(zipImage)
-createDist.dependsOn(createInstallerExe)
+OperatingSystem os = DefaultNativePlatform.currentOperatingSystem;
+if (os.windows) {
+
+    task createLauncherExe(type: GradleNsisTask) {
+        configuration = file("launcher.nsi")
+        runIn = file("${projectDir}")
+        destinationFolder = file("${buildDir}/bin")
+    }
+    createRuntimeImage.finalizedBy(createLauncherExe)
+
+
+    task createInstallerExe(type: GradleNsisTask) {
+        configuration = file("installer.nsi")
+        runIn = file("${projectDir}")
+        destinationFolder = file("${buildDir}/bin")
+    }
+    createInstallerExe.dependsOn(createLauncherExe)
+
+    task zipImage(type: Zip) {
+        destinationDirectory = buildDir
+        archiveBaseName = "pdxu_launcher"
+        archiveAppendix = "windows"
+        archiveVersion = ""
+        from "${buildDir}/image"
+        from "${projectDir}/logo.ico"
+        from "${projectDir}/logo.ico"
+        from "${buildDir}/bin/launcher.exe"
+    }
+    zipImage.dependsOn(createRuntimeImage)
+
+    createDist.dependsOn(zipImage)
+    createDist.dependsOn(createInstallerExe)
+} else {
+
+    task createDebianPackage(type: Deb) {
+        packageName = 'pdx-unlimiter'
+        version = getVersion()
+        license = "GPL"
+        arch = "amd64"
+        packageDescription = "A tool aimed at improving the gameplay experience for various Paradox Games" +
+                "by providing savegame management and user-made achievements."
+        url = "https://github.com/crschnick/pdx_unlimiter"
+
+        into '/opt/pdx-unlimiter'
+
+        from("${buildDir}/image") {
+            into 'launcher'
+            exclude 'bin'
+        }
+
+        from("${buildDir}/image/bin") {
+            into 'launcher/bin'
+            fileMode = 0550
+        }
+
+        link('/usr/bin/pdx-unlimiter', '/opt/pdx-unlimiter/launcher/bin/updater')
+    }
+    createDist.dependsOn(createDebianPackage)
+}
