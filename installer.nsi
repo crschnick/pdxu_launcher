@@ -17,6 +17,11 @@ VIAddVersionKey FileVersion      1
 VIAddVersionKey ProductVersion   1
 VIAddVersionKey InternalName     "Pdx-Unlimiter"
 VIAddVersionKey OriginalFilename "pdxu_installer.exe"
+VIAddVersionKey LegalCopyright "Christopher Schnick"
+
+
+!define OutFileSignSHA256 ".\sign\signtool sign /f .\sign\certificate.cer /fd sha256 /tr http://timestamp.comodoca.com?td=sha256 /td sha256 /as /v"
+
 
  Function .onInit
   StrCpy $INSTDIR `$PROFILE\pdx_unlimiter`
@@ -70,3 +75,6 @@ Function .onInstSuccess
   SetOutPath $LAUNCHERDIR
   Exec "$LAUNCHERDIR\launcher.exe -installed"
 FunctionEnd
+
+
+!finalize "${OutFileSignSHA256} pdxu_installer.exe"
