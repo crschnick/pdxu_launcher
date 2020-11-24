@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-version '2.0-beta2'
+version '2.0-beta3'
 
 if (!System.getProperty("java.runtime.name").contains("OpenJDK")) {
     throw new GradleException("OpenJDK is required!")
@@ -93,7 +93,6 @@ build.dependsOn(copyOutput)
 
 jlink {
     imageDir = file("$buildDir/image")
-    imageZip = file("$buildDir/dist/pdxu_launcher-windows.zip")
     options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     launcher {
         name = 'pdxu_launcher'
@@ -126,13 +125,6 @@ jlink {
         )
     }
 }
-
-task writeImageVersion(type: DefaultTask) {
-    doLast {
-        file("${buildDir}/image/version").write(version)
-    }
-}
-jlinkZip.dependsOn(writeImageVersion)
 
 task writePackageVersion(type: DefaultTask) {
     doLast {
@@ -183,4 +175,19 @@ if (os.windows) {
     }
 }
 
-createDist.finalizedBy(jlinkZip, jpackage)
+
+task writeImageVersion(type: DefaultTask, dependsOn: jpackage) {
+    doLast {
+        file("${buildDir}/image/version").write(version)
+    }
+}
+
+task zipImage(type: Zip, dependsOn: writeImageVersion) {
+    destinationDirectory = file("$buildDir/dist")
+    archiveAppendix = os.windows ? "windows" : "linux"
+    archiveBaseName = "pdxu_launcher"
+    archiveVersion = ""
+    from "${buildDir}/image"
+}
+
+createDist.finalizedBy(zipImage, jpackage)
