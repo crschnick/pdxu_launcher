@@ -1,6 +1,5 @@
 
 plugins {
-    id 'idea'
     id 'application'
     id "org.moditect.gradleplugin" version "1.0.0-rc3"
     id 'org.beryx.jlink' version '2.22.3'
@@ -112,11 +111,12 @@ jlink {
         skipInstaller = false
         installerName = 'Pdx-Unlimiter'
         applicationName = 'Pdx-Unlimiter'
-        icon = "$projectDir/logo.ico"
-        installerOptions.addAll('--verbose',
+        installerOptions.addAll(
+                '--verbose',
                 '--copyright','(C) 2020, Christopher Schnick',
-                '--license-file','.\\license_file.txt',
+                '--license-file','res/license_file.txt',
                 '--vendor','Christopher Schnick',
+                '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
                 '--file-associations', 'res/pua.properties',
                 '--file-associations', 'res/ck2.properties',
                 '--file-associations', 'res/ck3.properties',
@@ -149,6 +149,7 @@ OperatingSystem os = DefaultNativePlatform.currentOperatingSystem;
 if (os.windows) {
     jlink {
         jpackage {
+            icon = "res/logo.ico"
             installerType = 'msi'
             installerOptions.addAll('--win-dir-chooser', '--win-menu', '--win-shortcut')
         }
@@ -174,31 +175,12 @@ if (os.windows) {
     }
     jpackageImage.finalizedBy(signExecutable)
 } else {
-
-    task createDebianPackage(type: Deb) {
-        packageName = 'pdx-unlimiter'
-        version = getVersion()
-        license = "GPL"
-        arch = "amd64"
-        packageDescription = "A tool aimed at improving the gameplay experience for various Paradox Games" +
-                "by providing savegame management and user-made achievements."
-        url = "https://github.com/crschnick/pdx_unlimiter"
-
-        into '/opt/pdx-unlimiter'
-
-        from("${buildDir}/image") {
-            into 'launcher'
-            exclude 'bin'
+    jlink {
+        jpackage {
+            installerType = 'deb'
+            installerOptions.addAll('--linux-rpm-license-type', 'GPL', '--linux-shortcut')
         }
-
-        from("${buildDir}/image/bin") {
-            into 'launcher/bin'
-            fileMode = 0550
-        }
-
-        link('/usr/bin/pdx-unlimiter', '/opt/pdx-unlimiter/launcher/bin/updater')
     }
-    createDist.dependsOn(createDebianPackage)
 }
 
 createDist.finalizedBy(jlinkZip, jpackage)
