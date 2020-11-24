@@ -52,7 +52,7 @@ public class Updater {
         boolean isBootstrap = version.equals("bootstrap");
 
         try {
-            initErrorHandler(prod, version, runDir);
+            initErrorHandler(isBootstrap, prod, version, userDataPath);
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -147,14 +147,14 @@ public class Updater {
         new ProcessBuilder(argList).start();
     }
 
-    private static void initErrorHandler(boolean prod, String version, Path p) throws IOException {
+    private static void initErrorHandler(boolean bootstrapper, boolean prod, String version, Path p) throws IOException {
         System.setProperty("sentry.dsn", "https://f86d7649617d4c9cb95db5a19811305b@o462618.ingest.sentry.io/5468640");
         System.setProperty("sentry.stacktrace.hidecommon", "false");
         System.setProperty("sentry.stacktrace.app.packages", "");
         System.setProperty("sentry.uncaught.handler.enabled", "true");
         if (prod) {
             FileUtils.forceMkdir(p.resolve("logs").toFile());
-            var l = p.resolve("logs").resolve("updater.log");
+            var l = p.resolve("logs").resolve(bootstrapper ? "bootstrapper.log" : "launcher.log");
             System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
             System.setProperty("sentry.environment", "production");
