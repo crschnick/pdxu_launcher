@@ -49,7 +49,7 @@ public class Updater {
             version = "unknown";
         }
         boolean prod = !version.equals("dev");
-        boolean isBootstrap = version.equals("bootstrap");
+        boolean isBootstrap = version.contains("bootstrap");
 
         try {
             initErrorHandler(isBootstrap, prod, version, userDataPath);
