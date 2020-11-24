@@ -6,6 +6,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,10 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -32,47 +30,50 @@ public class Updater {
         logger.error("Error occured", e);
     }
 
+
     public static void main(String[] args) {
-        if (isPdxuRunning()) {
+        Path userDataPath = Optional.ofNullable(System.getProperty("pdxu.installDir"))
+                .map(Path::of)
+                .orElse(Path.of(System.getProperty("user.home"), "Pdx-Unlimiter"));
+        Path runDir = Path.of(System.getProperty("java.home"));
+
+        if (isPdxuRunning(userDataPath, runDir)) {
             return;
         }
 
-        boolean prod = false;
-        String version = "none";
-        Path dir = null;
-        var iDir = Optional.ofNullable(System.getProperty("pdxu.installDir"));
-        if (iDir.isPresent()) {
-            dir = Path.of(iDir.get());
-        } else {
-            Path jdkHome = Path.of(System.getProperty("java.home"));
-            if (jdkHome.toFile().getName().equals("launcher")) {
-                dir = jdkHome.getParent();
-                prod = true;
-                try {
-                    version = Files.readString(dir.resolve("launcher").resolve("version"));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            } else {
-                throw new NoSuchElementException("Missing property value for pdxu.installDir");
-            }
+        Path versionFile = runDir.resolve("version");
+        String version = null;
+        try {
+            version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
+        } catch (IOException e) {
+            version = "unknown";
         }
-
+        boolean prod = !version.equals("dev");
+        boolean isBootstrap = version.equals("bootstrap");
 
         try {
-            initErrorHandler(prod, version, dir);
+            initErrorHandler(prod, version, runDir);
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
 
         UpdaterGui frame = new UpdaterGui();
+        if (isBootstrap) {
+            runBootstrapper(frame, userDataPath, args);
+        } else {
+            runUpdater(frame, userDataPath, args);
+        }
+        frame.dispose();
+
+    }
+
+    private static void runUpdater(UpdaterGui frame, Path installDir, String[] args) {
         try {
             update(frame,
                     new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
                     "pdx_unlimiter",
-                    dir.resolve("app"),
-                    dir.resolve("app"),
+                    installDir.resolve("app"),
                     true);
         } catch (Exception e) {
             exception(e);
@@ -83,47 +84,67 @@ public class Updater {
             update(frame,
                     new URL("https://github.com/crschnick/pdxu_achievements/releases/latest/download/"),
                     "pdxu_achievements",
-                    dir.resolve("achievements"),
-                    dir.resolve("achievements"),
+                    installDir.resolve("achievements"),
                     false);
         } catch (Exception e) {
             exception(e);
         }
 
+        try {
+            run(installDir, args);
+        } catch (Exception e) {
+            exception(e);
+        }
+    }
 
+    private static void runBootstrapper(UpdaterGui frame, Path installDir, String[] args) {
         try {
             update(frame,
                     new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
                     "pdxu_launcher",
-                    dir.resolve("launcher_new"),
-                    dir.resolve("launcher"),
+                    installDir.resolve("launcher"),
                     true);
         } catch (Exception e) {
             exception(e);
         }
 
         try {
-            run(dir);
-        } catch (Exception e) {
+            runLauncher(installDir, args);
+        } catch (IOException e) {
             exception(e);
         }
-
-        frame.dispose();
-
     }
 
-    private static boolean isPdxuRunning() {
-        var r = ProcessHandle.allProcesses()
+    private static boolean isPdxuRunning(Path userPath, Path runPath) {
+        var app = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .anyMatch(s -> s.endsWith(Path.of("app", "bin", "java.exe").toString()));
-        return r;
+                .anyMatch(s -> s.equals(userPath.resolve(Path.of("app", "bin", "java.exe")).toString()));
+
+        var launcher = ProcessHandle.allProcesses()
+                .map(h -> h.info().command().orElse(""))
+                .anyMatch(s -> s.equals(userPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()));
+
+        var bootstrapper = ProcessHandle.allProcesses()
+                .map(h -> h.info().command().orElse(""))
+                .anyMatch(s -> s.equals(runPath.resolve(Path.of( "bin", "java.exe")).toString()));
+
+        return app || launcher || bootstrapper;
     }
 
-    private static void run(Path dir) throws IOException {
+    private static void runLauncher(Path dir, String[] args) throws IOException {
+        String cmd = dir.resolve("launcher").resolve("bin").resolve("pdxu_launcher.bat").toString();
+        logger.info("Running launcher: " + cmd);
+        var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
+        argList.addAll(Arrays.asList(args));
+        new ProcessBuilder(argList).start();
+    }
+
+    private static void run(Path dir, String[] args) throws IOException {
         String cmd = dir.resolve("app").resolve("bin").resolve("pdxu.bat").toString();
         logger.info("Running: " + cmd);
-        new ProcessBuilder(List.of("cmd.exe", "/C", cmd))
-                .start();
+        var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
+        argList.addAll(Arrays.asList(args));
+        new ProcessBuilder(argList).start();
     }
 
     private static void initErrorHandler(boolean prod, String version, Path p) throws IOException {
@@ -153,10 +174,10 @@ public class Updater {
         Sentry.init();
     }
 
-    private static void update(UpdaterGui frame, URL url, String assetName, Path out, Path checkDir, boolean platformSpecific) throws Exception {
+    private static void update(UpdaterGui frame, URL url, String assetName, Path out, boolean platformSpecific) throws Exception {
         Info info = getInfo(url, assetName, platformSpecific);
         logger.info("Download info: " + info.toString());
-        if (!requiresUpdate(info, checkDir)) {
+        if (!requiresUpdate(info, out)) {
             logger.info("No update required");
             return;
         }

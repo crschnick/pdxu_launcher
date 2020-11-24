@@ -2,22 +2,20 @@
 plugins {
     id 'idea'
     id 'application'
-    id "com.github.langmo.gradlensis" version "0.1.0"
     id "org.moditect.gradleplugin" version "1.0.0-rc3"
-    id "nebula.ospackage" version "8.4.1"
+    id 'org.beryx.jlink' version '2.22.3'
 }
 
-version '1.0-rc4'
+version '2.0-beta1'
 
 if (!System.getProperty("java.runtime.name").contains("OpenJDK")) {
-    println "OpenJDK is required!"
-    return
+    throw new GradleException("OpenJDK is required!")
 }
 
 java {
     modularity.inferModulePath = true
-    sourceCompatibility = JavaVersion.VERSION_15
-    targetCompatibility = JavaVersion.VERSION_15
+    sourceCompatibility = JavaVersion.VERSION_14
+    targetCompatibility = JavaVersion.VERSION_14
 }
 
 application {
@@ -94,68 +92,87 @@ task copyOutput(type: Copy) {
 build.dependsOn(copyModules)
 build.dependsOn(copyOutput)
 
-createRuntimeImage {
-    outputDirectory = file("$buildDir/image")
-    modulePath = [file("$buildDir/modules")]
-    modules = ['com.crschnick.pdx_unlimiter.updater', 'org.slf4j', 'org.slf4j.simple', 'jdk.crypto.ec']
-    excludedResources = []
+jlink {
+    imageDir = file("$buildDir/image")
+    imageZip = file("$buildDir/dist/pdxu_launcher.zip")
+    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
     launcher {
-        name = 'updater'
-        module = 'com.crschnick.pdx_unlimiter.updater'
+        name = 'pdxu_launcher'
     }
-    compression = 2
-    stripDebug = true
-    noHeaderFiles = true
-    noManPages = true
-}
-createRuntimeImage.dependsOn(build)
 
-task writeVersion(type: DefaultTask) {
+    customImage {
+        appModules = ['com.crschnick.pdx_unlimiter.updater', 'org.slf4j', 'org.slf4j.simple', 'jdk.crypto.ec']
+    }
+
+    jpackage {
+        appVersion = "2.0"
+        imageOutputDir = file("$buildDir/dist")
+        installerOutputDir = file("$buildDir/bin")
+        imageName = 'Pdx-Unlimiter'
+        skipInstaller = false
+        installerName = 'Pdx-Unlimiter'
+        applicationName = 'Pdx-Unlimiter'
+        icon = "$projectDir/logo.ico"
+        installerOptions.addAll('--verbose',
+                '--copyright','(C) 2020, Christopher Schnick',
+                '--license-file','.\\license_file.txt',
+                '--vendor','Christopher Schnick',
+                '--file-associations', 'res/pua.properties',
+                '--file-associations', 'res/ck2.properties',
+                '--file-associations', 'res/ck3.properties',
+                '--file-associations', 'res/eu4.properties',
+                '--file-associations', 'res/hoi4.properties',
+                '--file-associations', 'res/sav.properties'
+        )
+    }
+}
+
+task writeImageVersion(type: DefaultTask) {
     doLast {
-        mkdir file("${buildDir}/image")
         file("${buildDir}/image/version").write(version)
     }
 }
-createRuntimeImage.finalizedBy(writeVersion)
+jlinkZip.dependsOn(writeImageVersion)
+
+task writePackageVersion(type: DefaultTask) {
+    doLast {
+        file("${buildDir}/dist/Pdx-Unlimiter/runtime/version").write(version)
+    }
+}
+jpackageImage.finalizedBy(writePackageVersion)
 
 
-
-import com.github.langmo.gradlensis.GradleNsisTask
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 task createDist(type: DefaultTask)
 OperatingSystem os = DefaultNativePlatform.currentOperatingSystem;
 if (os.windows) {
-
-    task createLauncherExe(type: GradleNsisTask) {
-        configuration = file("launcher.nsi")
-        runIn = file("${projectDir}")
-        destinationFolder = file("${buildDir}/bin")
+    jlink {
+        jpackage {
+            installerType = 'msi'
+            installerOptions.addAll('--win-dir-chooser', '--win-menu', '--win-shortcut')
+        }
     }
-    createRuntimeImage.finalizedBy(createLauncherExe)
 
+    task signInstaller(type: Exec) {
+        workingDir "$projectDir"
+        commandLine 'sign\\signtool.exe sign /f sign\\certificate.cer /fd sha256 /tr http://timestamp.comodoca.com?td=sha256 /td sha256 /v build\\bin\\Pdx-Unlimiter-2.0.msi'.split(" ")
 
-    task createInstallerExe(type: GradleNsisTask) {
-        configuration = file("installer.nsi")
-        runIn = file("${projectDir}")
-        destinationFolder = file("${buildDir}/bin")
     }
-    createInstallerExe.dependsOn(createLauncherExe)
+    jpackage.finalizedBy(signInstaller)
 
-    task zipImage(type: Zip) {
-        destinationDirectory = buildDir
-        archiveBaseName = "pdxu_launcher"
-        archiveAppendix = "windows"
-        archiveVersion = ""
-        from "${buildDir}/image"
-        from "${projectDir}/logo.ico"
-        from "${projectDir}/logo.ico"
-        from "${buildDir}/bin/launcher.exe"
+    task makeWritable(type: DefaultTask) {
+        doLast {
+            file('build\\dist\\Pdx-Unlimiter\\Pdx-Unlimiter.exe').writable = true
+        }
     }
-    zipImage.dependsOn(createRuntimeImage)
 
-    createDist.dependsOn(zipImage)
-    createDist.dependsOn(createInstallerExe)
+    task signExecutable(type: Exec, dependsOn: makeWritable) {
+        workingDir "$projectDir"
+        commandLine 'sign\\signtool.exe sign /f sign\\certificate.cer /fd sha256 /tr http://timestamp.comodoca.com?td=sha256 /td sha256 /v /as build\\dist\\Pdx-Unlimiter\\Pdx-Unlimiter.exe'.split(" ")
+
+    }
+    jpackageImage.finalizedBy(signExecutable)
 } else {
 
     task createDebianPackage(type: Deb) {
@@ -183,3 +200,5 @@ if (os.windows) {
     }
     createDist.dependsOn(createDebianPackage)
 }
+
+createDist.finalizedBy(jlinkZip, jpackage)
