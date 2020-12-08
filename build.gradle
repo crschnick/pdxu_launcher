@@ -117,7 +117,6 @@ jlink {
                 '--vendor','Christopher Schnick',
                 '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
                 '--file-associations', 'res/pua.properties',
-                '--file-associations', 'res/ck2.properties',
                 '--file-associations', 'res/ck3.properties',
                 '--file-associations', 'res/eu4.properties',
                 '--file-associations', 'res/hoi4.properties',
