@@ -23,6 +23,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Updater {
+
     private static Logger logger;
 
     private static void exception(Exception e) {
@@ -32,14 +33,28 @@ public class Updater {
 
 
     public static void main(String[] args) {
-        Path userDataPath = Optional.ofNullable(System.getProperty("pdxu.installDir"))
+        Path logsPath = Optional.ofNullable(System.getProperty("pdxu.userDir"))
                 .map(Path::of)
-                .orElse(Path.of(System.getProperty("user.home"), "Pdx-Unlimiter"));
-        Path runDir = Path.of(System.getProperty("java.home"));
+                .orElseGet(() -> {
+                    if (SystemUtils.IS_OS_WINDOWS) {
+                        return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter", "logs");
+                    } else {
+                        return Path.of("var", "logs", "Pdx-Unlimiter");
+                    }
+                });
 
-        if (isPdxuRunning(userDataPath, runDir)) {
-            return;
-        }
+        Path installPath = Optional.ofNullable(System.getProperty("pdxu.installDir"))
+                .map(Path::of)
+                .orElseGet(() -> {
+                            if (SystemUtils.IS_OS_WINDOWS) {
+                                return Path.of(System.getenv("LOCALAPPDATA"))
+                                        .resolve("Programs").resolve("Pdx-Unlimiter");
+                            } else {
+                                return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
+                            }
+                        });
+
+        Path runDir = Path.of(System.getProperty("java.home"));
 
         Path versionFile = runDir.resolve("version");
         String version = null;
@@ -52,42 +67,54 @@ public class Updater {
         boolean isBootstrap = version.contains("bootstrap");
 
         try {
-            initErrorHandler(isBootstrap, prod, version, userDataPath);
+            initErrorHandler(isBootstrap, prod, version, logsPath);
         } catch (IOException e) {
             e.printStackTrace();
             return;
         }
 
+        boolean passesArguments = args.length > 0;
+        logger.info("Passing arguments " + Arrays.toString(args));
+
+
+        if (shouldStop(installPath, runDir, passesArguments)) {
+            logger.info("Another pdxu instance is already running");
+            return;
+        }
+
         UpdaterGui frame = new UpdaterGui();
         if (isBootstrap) {
-            runBootstrapper(frame, userDataPath, args);
+            runBootstrapper(frame, installPath, args);
         } else {
-            runUpdater(frame, userDataPath, args);
+            runUpdater(frame, installPath, args);
         }
         frame.dispose();
 
     }
 
     private static void runUpdater(UpdaterGui frame, Path installDir, String[] args) {
-        try {
-            update(frame,
-                    new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
-                    "pdx_unlimiter",
-                    installDir.resolve("app"),
-                    true);
-        } catch (Exception e) {
-            exception(e);
-        }
+        boolean passesArguments = args.length > 0;
+        if (!passesArguments) {
+            try {
+                update(frame,
+                        new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
+                        "pdx_unlimiter",
+                        installDir.resolve("app"),
+                        true);
+            } catch (Exception e) {
+                exception(e);
+            }
 
 
-        try {
-            update(frame,
-                    new URL("https://github.com/crschnick/pdxu_achievements/releases/latest/download/"),
-                    "pdxu_achievements",
-                    installDir.resolve("achievements"),
-                    false);
-        } catch (Exception e) {
-            exception(e);
+            try {
+                update(frame,
+                        new URL("https://github.com/crschnick/pdxu_achievements/releases/latest/download/"),
+                        "pdxu_achievements",
+                        installDir.resolve("achievements"),
+                        false);
+            } catch (Exception e) {
+                exception(e);
+            }
         }
 
         try {
@@ -98,14 +125,17 @@ public class Updater {
     }
 
     private static void runBootstrapper(UpdaterGui frame, Path installDir, String[] args) {
-        try {
-            update(frame,
-                    new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
-                    "pdxu_launcher",
-                    installDir.resolve("launcher"),
-                    true);
-        } catch (Exception e) {
-            exception(e);
+        boolean passesArguments = args.length > 0;
+        if (!passesArguments) {
+            try {
+                update(frame,
+                        new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
+                        "pdxu_launcher",
+                        installDir.resolve("launcher"),
+                        true);
+            } catch (Exception e) {
+                exception(e);
+            }
         }
 
         try {
@@ -115,50 +145,62 @@ public class Updater {
         }
     }
 
-    private static boolean isPdxuRunning(Path userPath, Path runPath) {
+    private static boolean shouldStop(Path installPath, Path runPath, boolean hasArguments) {
         var app = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .anyMatch(s -> s.equals(userPath.resolve(Path.of("app", "bin", "java.exe")).toString()));
+                .filter(s -> s.equals(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
+                .count();
 
         var launcher = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .anyMatch(s -> s.equals(userPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()));
+                .filter(s -> s.equals(installPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()))
+                .count();
 
-        var bootstrapper = ProcessHandle.allProcesses()
+        var bootstrappers = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .anyMatch(s -> s.equals(runPath.resolve(Path.of( "bin", "java.exe")).toString()));
+                .filter(s -> s.equals(runPath.resolve(Path.of( "bin", "java.exe")).toString()))
+                .count();
 
-        return app || launcher || bootstrapper;
+        return !hasArguments && (app + launcher + bootstrappers >= 2);
     }
 
     private static void runLauncher(Path dir, String[] args) throws IOException {
-        String cmd = dir.resolve("launcher").resolve("bin").resolve("pdxu_launcher.bat").toString();
-        logger.info("Running launcher: " + cmd);
-        var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
-        argList.addAll(Arrays.asList(args));
-        new ProcessBuilder(argList).start();
+        if (SystemUtils.IS_OS_WINDOWS) {
+            String cmd = dir.resolve("launcher").resolve("bin").resolve("pdxu_launcher.bat").toString();
+            logger.info("Running launcher: " + cmd);
+            var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
+            argList.addAll(Arrays.asList(args));
+            new ProcessBuilder(argList).start();
+        } else {
+            new ProcessBuilder(dir.resolve("launcher").resolve("bin").resolve("pdxu_launcher").toString()).start();
+        }
     }
 
     private static void run(Path dir, String[] args) throws IOException {
-        String cmd = dir.resolve("app").resolve("bin").resolve("pdxu.bat").toString();
-        logger.info("Running: " + cmd);
-        var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
-        argList.addAll(Arrays.asList(args));
-        new ProcessBuilder(argList).start();
+        if (SystemUtils.IS_OS_WINDOWS) {
+            String cmd = dir.resolve("app").resolve("bin").resolve("pdxu.bat").toString();
+            logger.info("Running: " + cmd);
+            var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
+            argList.addAll(Arrays.asList(args));
+            new ProcessBuilder(argList).start();
+        } else {
+            new ProcessBuilder(dir.resolve("launcher").resolve("bin").resolve("pdxu").toString()).start();
+        }
     }
 
-    private static void initErrorHandler(boolean bootstrapper, boolean prod, String version, Path p) throws IOException {
+    private static void initErrorHandler(boolean bootstrapper, boolean prod, String version, Path logDir) throws IOException {
         System.setProperty("sentry.dsn", "https://f86d7649617d4c9cb95db5a19811305b@o462618.ingest.sentry.io/5468640");
         System.setProperty("sentry.stacktrace.hidecommon", "false");
         System.setProperty("sentry.stacktrace.app.packages", "");
         System.setProperty("sentry.uncaught.handler.enabled", "true");
+        System.setProperty("sentry.servername", "");
         if (prod) {
-            FileUtils.forceMkdir(p.resolve("logs").toFile());
-            var l = p.resolve("logs").resolve(bootstrapper ? "bootstrapper.log" : "launcher.log");
+            FileUtils.forceMkdir(logDir.toFile());
+            var l = logDir.resolve(bootstrapper ? "bootstrapper.log" : "launcher.log");
             System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
             System.setProperty("sentry.environment", "production");
-            System.setProperty("sentry.version", version);
+            System.setProperty("sentry.release", version);
         } else {
             System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
             System.setProperty("sentry.environment", "dev");
@@ -168,9 +210,7 @@ public class Updater {
 
         logger = LoggerFactory.getLogger(Updater.class);
 
-        logger.info("Initializing updater at " + p.toString() + ", is production: " + prod);
-        logger.info("Writing to log file " + p.resolve("logs").resolve("updater.log").toString());
-        logger.info("Working directory: " + System.getProperty("user.dir"));
+        logger.info("Initializing updater." + " is production: " + prod + " , is bootstrapper: " + bootstrapper);
         Sentry.init();
     }
 
