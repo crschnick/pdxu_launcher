@@ -31,7 +31,6 @@ public class Updater {
         logger.error("Error occured", e);
     }
 
-
     public static void main(String[] args) {
         Path logsPath = Optional.ofNullable(System.getProperty("pdxu.userDir"))
                 .map(Path::of)
