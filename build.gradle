@@ -5,11 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-version '2.0-beta3'
-
-if (!System.getProperty("java.runtime.name").contains("OpenJDK")) {
-    throw new GradleException("OpenJDK is required!")
-}
+version '2.0-beta4'
 
 java {
     modularity.inferModulePath = true

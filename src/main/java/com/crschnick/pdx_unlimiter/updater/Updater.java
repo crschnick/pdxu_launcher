@@ -6,7 +6,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +34,7 @@ public class Updater {
     public static void main(String[] args) {
         Path logsPath = Optional.ofNullable(System.getProperty("pdxu.userDir"))
                 .map(Path::of)
+                .map(p -> p.resolve("logs"))
                 .orElseGet(() -> {
                     if (SystemUtils.IS_OS_WINDOWS) {
                         return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter", "logs");
@@ -46,16 +46,15 @@ public class Updater {
         Path installPath = Optional.ofNullable(System.getProperty("pdxu.installDir"))
                 .map(Path::of)
                 .orElseGet(() -> {
-                            if (SystemUtils.IS_OS_WINDOWS) {
-                                return Path.of(System.getenv("LOCALAPPDATA"))
-                                        .resolve("Programs").resolve("Pdx-Unlimiter");
-                            } else {
-                                return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
-                            }
-                        });
+                    if (SystemUtils.IS_OS_WINDOWS) {
+                        return Path.of(System.getenv("LOCALAPPDATA"))
+                                .resolve("Programs").resolve("Pdx-Unlimiter");
+                    } else {
+                        return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
+                    }
+                });
 
         Path runDir = Path.of(System.getProperty("java.home"));
-
         Path versionFile = runDir.resolve("version");
         String version = null;
         try {
@@ -158,7 +157,7 @@ public class Updater {
 
         var bootstrappers = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.equals(runPath.resolve(Path.of( "bin", "java.exe")).toString()))
+                .filter(s -> s.equals(runPath.resolve(Path.of("bin", "java.exe")).toString()))
                 .count();
 
         return !hasArguments && (app + launcher + bootstrappers >= 2);
