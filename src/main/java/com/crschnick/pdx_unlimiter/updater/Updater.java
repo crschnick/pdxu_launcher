@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -148,22 +149,25 @@ public class Updater {
         var app = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
-                .count();
+                .collect(Collectors.toList());
+        app.forEach(s -> logger.debug("Detected running app: " + s));
 
         var launcher = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(installPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()))
-                .count();
+                .collect(Collectors.toList());
+        launcher.forEach(s -> logger.debug("Detected running launcher: " + s));
 
         var bootstrappers = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(runPath.resolve(Path.of("bin", "java.exe")).toString()))
-                .count();
+                .collect(Collectors.toList());
+        bootstrappers.forEach(s -> logger.debug("Detected running bootstrapper: " + s));
 
         if (isBootstrapper) {
-            return !hasArguments && (app + launcher + bootstrappers >= 2);
+            return !hasArguments && (app.size() + launcher.size() + bootstrappers.size() >= 2);
         } else {
-            return !hasArguments && (app + launcher >= 2);
+            return !hasArguments && (app.size() + launcher.size() >= 2);
         }
     }
 

@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-version '2.0-beta5'
+version '2.0-beta6'
 
 java {
     modularity.inferModulePath = true
@@ -16,7 +16,7 @@ java {
 application {
     mainModule = 'com.crschnick.pdx_unlimiter.updater'
     mainClass = 'com.crschnick.pdx_unlimiter.updater.Updater'
-    applicationDefaultJvmArgs = ['-Dpdxu.installDir=' + System.getProperty("pdxu.installDir")]
+    applicationDefaultJvmArgs = System.hasProperty("pdxu.installDir") ? ['-Dpdxu.installDir=' + System.getProperty("pdxu.installDir")] : []
 }
 
 repositories {
