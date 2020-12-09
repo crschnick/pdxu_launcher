@@ -76,7 +76,7 @@ public class Updater {
         logger.info("Passing arguments " + Arrays.toString(args));
 
 
-        if (shouldStop(installPath, runDir, passesArguments)) {
+        if (shouldStop(installPath, runDir, passesArguments, isBootstrap)) {
             logger.info("Another pdxu instance is already running");
             return;
         }
@@ -144,7 +144,7 @@ public class Updater {
         }
     }
 
-    private static boolean shouldStop(Path installPath, Path runPath, boolean hasArguments) {
+    private static boolean shouldStop(Path installPath, Path runPath, boolean hasArguments, boolean isBootstrapper) {
         var app = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
@@ -160,7 +160,11 @@ public class Updater {
                 .filter(s -> s.equals(runPath.resolve(Path.of("bin", "java.exe")).toString()))
                 .count();
 
-        return !hasArguments && (app + launcher + bootstrappers >= 2);
+        if (isBootstrapper) {
+            return !hasArguments && (app + launcher + bootstrappers >= 2);
+        } else {
+            return !hasArguments && (app + launcher >= 2);
+        }
     }
 
     private static void runLauncher(Path dir, String[] args) throws IOException {
@@ -209,7 +213,7 @@ public class Updater {
 
         logger = LoggerFactory.getLogger(Updater.class);
 
-        logger.info("Initializing updater." + " is production: " + prod + " , is bootstrapper: " + bootstrapper);
+        logger.info("Initializing with " + "production: " + prod + ", bootstrap: " + bootstrapper);
         Sentry.init();
     }
 
