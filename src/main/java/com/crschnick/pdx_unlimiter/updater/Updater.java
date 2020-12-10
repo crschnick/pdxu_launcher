@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -56,7 +55,7 @@ public class Updater {
 
         Path runDir = Path.of(System.getProperty("java.home"));
         Path versionFile = runDir.resolve("version");
-        String version = null;
+        String version;
         try {
             version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
         } catch (IOException e) {
@@ -72,28 +71,23 @@ public class Updater {
             return;
         }
 
-        boolean passesArguments = args.length > 0;
         logger.info("Passing arguments " + Arrays.toString(args));
 
-
-        if (shouldStop(installPath, runDir, passesArguments, isBootstrap)) {
-            logger.info("Another pdxu instance is already running");
-            return;
-        }
+        boolean doUpdate = shouldDoUpdate(installPath, runDir, isBootstrap);
+        logger.info("Doing update: " + doUpdate);
 
         UpdaterGui frame = new UpdaterGui();
         if (isBootstrap) {
-            runBootstrapper(frame, installPath, args);
+            runBootstrapper(frame, installPath, doUpdate, args);
         } else {
-            runUpdater(frame, installPath, args);
+            runUpdater(frame, installPath, doUpdate, args);
         }
         frame.dispose();
 
     }
 
-    private static void runUpdater(UpdaterGui frame, Path installDir, String[] args) {
-        boolean passesArguments = args.length > 0;
-        if (!passesArguments) {
+    private static void runUpdater(UpdaterGui frame, Path installDir, boolean doUpdate, String[] args) {
+        if (doUpdate) {
             try {
                 update(frame,
                         new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
@@ -123,9 +117,8 @@ public class Updater {
         }
     }
 
-    private static void runBootstrapper(UpdaterGui frame, Path installDir, String[] args) {
-        boolean passesArguments = args.length > 0;
-        if (!passesArguments) {
+    private static void runBootstrapper(UpdaterGui frame, Path installDir, boolean doUpdate, String[] args) {
+        if (doUpdate) {
             try {
                 update(frame,
                         new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
@@ -144,7 +137,7 @@ public class Updater {
         }
     }
 
-    private static boolean shouldStop(Path installPath, Path runPath, boolean hasArguments, boolean isBootstrapper) {
+    private static boolean shouldDoUpdate(Path installPath, Path runPath, boolean isBootstrapper) {
         var app = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
@@ -164,9 +157,11 @@ public class Updater {
         bootstrappers.forEach(s -> logger.debug("Detected running bootstrapper: " + s));
 
         if (isBootstrapper) {
-            return !hasArguments && (app.size() + launcher.size() + bootstrappers.size() >= 2);
+            // Starting launcher initially and no other bootstrapper instance is running.
+            return launcher.size() == 0 && bootstrappers.size() == 1;
         } else {
-            return !hasArguments && (app.size() + launcher.size() >= 2);
+            // Starting app initially and no other launcher instance is running.
+            return app.size() == 0 && launcher.size() == 1;
         }
     }
 
@@ -241,7 +236,6 @@ public class Updater {
     }
 
     private static boolean requiresUpdate(Info info, Path p) {
-        Optional<Instant> i = Optional.empty();
         String v = "";
         try {
             v = Files.readString(p.resolve("version"));
