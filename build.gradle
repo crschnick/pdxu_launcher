@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-version '2.0-beta9'
+version '2.0-beta10'
 
 java {
     modularity.inferModulePath = true

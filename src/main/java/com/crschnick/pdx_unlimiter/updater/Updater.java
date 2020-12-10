@@ -143,19 +143,20 @@ public class Updater {
     private static boolean shouldDoUpdate(Path installPath, Path runPath, boolean isBootstrapper) {
         var app = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.equals(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
+                .filter(s -> s.startsWith(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
         app.forEach(s -> logger.info("Detected running app: " + s));
 
         var launcher = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.equals(installPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()))
+                .filter(s -> s.startsWith(installPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
         launcher.forEach(s -> logger.info("Detected running launcher: " + s));
 
+        var bootsrapExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
         var bootstrappers = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.equals(runPath.resolve(Path.of("bin", "java.exe")).toString()))
+                .filter(s -> s.startsWith(bootsrapExecutable.toString()))
                 .collect(Collectors.toList());
         bootstrappers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
 
