@@ -59,9 +59,11 @@ public class Updater {
         try {
             version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
         } catch (IOException e) {
-            version = "unknown";
+            exception(e);
+            return;
         }
-        boolean prod = !version.equals("dev");
+
+        boolean prod = !version.contains("dev");
         boolean isBootstrap = version.contains("bootstrap");
 
         try {
@@ -71,6 +73,7 @@ public class Updater {
             return;
         }
 
+        logger.info("Detected version " + version);
         logger.info("Passing arguments " + Arrays.toString(args));
 
         boolean doUpdate = shouldDoUpdate(installPath, runDir, isBootstrap);
@@ -142,19 +145,19 @@ public class Updater {
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
-        app.forEach(s -> logger.debug("Detected running app: " + s));
+        app.forEach(s -> logger.info("Detected running app: " + s));
 
         var launcher = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(installPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
-        launcher.forEach(s -> logger.debug("Detected running launcher: " + s));
+        launcher.forEach(s -> logger.info("Detected running launcher: " + s));
 
         var bootstrappers = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
                 .filter(s -> s.equals(runPath.resolve(Path.of("bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
-        bootstrappers.forEach(s -> logger.debug("Detected running bootstrapper: " + s));
+        bootstrappers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
 
         if (isBootstrapper) {
             // Starting launcher initially and no other bootstrapper instance is running.
@@ -198,14 +201,17 @@ public class Updater {
         if (prod) {
             FileUtils.forceMkdir(logDir.toFile());
             var l = logDir.resolve(bootstrapper ? "bootstrapper.log" : "launcher.log");
-            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
+            //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
             System.setProperty("sentry.environment", "production");
             System.setProperty("sentry.release", version);
         } else {
-            System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+            //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
             System.setProperty("sentry.environment", "dev");
         }
+
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
+
         System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
         System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
 
