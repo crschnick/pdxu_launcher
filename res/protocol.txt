@@ -1,0 +1,17 @@
+
+    <DirectoryRef Id="INSTALLDIR">
+        <Component Id="ProductComponent" Guid="{206C911C-56EF-44B8-9257-5FD214427965}">
+           <RegistryKey Root="HKCR"
+                 Key="pdxu"
+                 Action="createAndRemoveOnUninstall">
+             <RegistryValue Type="string" Name="URL Protocol" Value=""/>
+             <RegistryValue Type="string" Value="URL:Pdx-Unlimiter"/>
+             <RegistryKey Key="DefaultIcon">
+               <RegistryValue Type="string" Value="Pdx-Unlimiter.exe" />
+             </RegistryKey>
+             <RegistryKey Key="shell\open\command">
+               <RegistryValue Type="string" Value="&quot;[INSTALLFOLDER]Pdx-Unlimiter.exe&quot; &quot;%1&quot;" />
+             </RegistryKey>
+           </RegistryKey>
+        </Component>
+    </DirectoryRef>

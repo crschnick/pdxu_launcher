@@ -109,10 +109,12 @@ jlink {
         installerName = 'Pdx-Unlimiter'
         applicationName = 'Pdx-Unlimiter'
         installerOptions.addAll(
+                '--temp', "$buildDir/tempfiles",
+                '--resource-dir', "$projectDir/res",
                 '--verbose',
                 '--copyright','(C) 2020, Christopher Schnick',
                 '--license-file','res/license_file.txt',
-                '--vendor','Christopher Schnick',
+                '--vendor','Pdx-Unlimiter',
                 '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
                 '--file-associations', 'res/pua.properties',
                 '--file-associations', 'res/ck3.properties',
@@ -147,7 +149,7 @@ if (os.windows) {
         jpackage {
             icon = "imgs/logo.ico"
             installerType = 'msi'
-            installerOptions.addAll('--win-dir-chooser', '--win-menu', '--win-shortcut')
+            installerOptions.addAll('--win-dir-chooser', '--win-menu', '--win-shortcut', '--win-menu-group', 'Pdx-Unlimiter')
         }
     }
 

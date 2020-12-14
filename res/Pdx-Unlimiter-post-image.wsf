@@ -1,0 +1,34 @@
+<job id="DoneInVBS">
+    <?job debug="true"?>
+    <script language="VBScript">
+        Const ForReading = 1
+        Set objFSO = CreateObject("Scripting.FileSystemObject")
+
+        Set headerFile = objFSO.OpenTextFile("..\..\..\..\res\header.txt", ForReading)
+        headerText = headerFile.ReadAll & vbCrLf
+
+        Set protocolFile = objFSO.OpenTextFile("..\..\..\..\res\protocol.txt", ForReading)
+        protocolText = protocolFile.ReadAll & vbCrLf
+
+        Set bundleFile = objFSO.OpenTextFile("..\..\config\bundle.wxf", ForReading)
+        bundleText = ""
+
+        Dim i
+        i = 0
+        Do Until bundleFile.AtEndOfStream
+            line = bundleFile.ReadLine
+            if i > 2 Then
+                bundleText = bundleText & line & vbCrLf
+            End If
+            i = i + 1
+        Loop
+
+        Set objOutputFile = objFSO.CreateTextFile("..\..\config\bundle.wxf")
+
+        objOutputFile.Write headerText
+        objOutputFile.Write protocolText
+        objOutputFile.Write bundleText
+
+        objOutputFile.Close
+    </script>
+</job>
