@@ -17,9 +17,14 @@
         i = 0
         Do Until bundleFile.AtEndOfStream
             line = bundleFile.ReadLine
-            if i > 2 Then
+            If i > 2 Then
                 bundleText = bundleText & line & vbCrLf
             End If
+
+            If InStr(line, "<Feature>") > 0 Then
+                bundleText = bundleText & "<ComponentRef Id=""ProductComponent""/>" & vbCrLf
+            End If
+
             i = i + 1
         Loop
 
@@ -30,5 +35,24 @@
         objOutputFile.Write bundleText
 
         objOutputFile.Close
+
+
+
+        Set mainFile = objFSO.OpenTextFile("..\..\config\main.wxs", ForReading)
+        mainText = ""
+
+        Do Until mainFile.AtEndOfStream
+            line = mainFile.ReadLine
+
+            If InStr(line, "</Feature>") > 0 Then
+                mainText = mainText & "      <ComponentRef Id=""ProductComponent""/>" & vbCrLf
+            End If
+
+            mainText = mainText & line & vbCrLf
+        Loop
+
+        Set objMainFile = objFSO.CreateTextFile("..\..\config\main.wxs")
+        objMainFile.Write mainText
+        objMainFile.Close
     </script>
 </job>
