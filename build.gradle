@@ -5,7 +5,11 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-version '2.0-beta10'
+setVersion '2.0-beta10'
+
+if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
+    file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
+}
 
 java {
     modularity.inferModulePath = true

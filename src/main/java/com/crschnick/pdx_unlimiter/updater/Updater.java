@@ -6,20 +6,21 @@ import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import static com.crschnick.pdx_unlimiter.updater.GithubHelper.downloadFile;
+import static com.crschnick.pdx_unlimiter.updater.GithubHelper.getInfo;
 
 public class Updater {
 
@@ -31,181 +32,126 @@ public class Updater {
     }
 
     public static void main(String[] args) {
-        Path logsPath = Optional.ofNullable(System.getProperty("pdxu.userDir"))
-                .map(Path::of)
-                .map(p -> p.resolve("logs"))
-                .orElseGet(() -> {
-                    if (SystemUtils.IS_OS_WINDOWS) {
-                        return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter", "logs");
-                    } else {
-                        return Path.of("var", "logs", "Pdx-Unlimiter");
-                    }
-                });
+        Settings.init();
+        initErrorHandler();
 
-        Path installPath = Optional.ofNullable(System.getProperty("pdxu.installDir"))
-                .map(Path::of)
-                .orElseGet(() -> {
-                    if (SystemUtils.IS_OS_WINDOWS) {
-                        return Path.of(System.getenv("LOCALAPPDATA"))
-                                .resolve("Programs").resolve("Pdx-Unlimiter");
-                    } else {
-                        return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
-                    }
-                });
-
-        Path runDir = Path.of(System.getProperty("java.home"));
-        Path versionFile = runDir.resolve("version");
-        String version;
-        try {
-            version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
-        } catch (IOException e) {
-            exception(e);
-            return;
-        }
-
-        boolean prod = !version.contains("dev");
-        boolean isBootstrap = version.contains("bootstrap");
-
-        try {
-            initErrorHandler(isBootstrap, prod, version, logsPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        logger.info("Detected version " + version);
+        logger.info("Version " + Settings.getInstance().getVersion());
         logger.info("Passing arguments " + Arrays.toString(args));
 
-        boolean doUpdate = shouldDoUpdate(installPath, runDir, isBootstrap);
+        boolean doUpdate = Settings.getInstance().doUpdate() && InstanceHandler.checkForOtherPdxuInstances();
         logger.info("Doing update: " + doUpdate);
-
-        UpdaterGui frame = new UpdaterGui();
-        if (isBootstrap) {
-            runBootstrapper(frame, installPath, doUpdate, args);
-        } else {
-            runUpdater(frame, installPath, doUpdate, args);
-        }
-        frame.dispose();
-
-    }
-
-    private static void runUpdater(UpdaterGui frame, Path installDir, boolean doUpdate, String[] args) {
         if (doUpdate) {
+            UpdaterGui frame = new UpdaterGui();
             try {
-                update(frame,
-                        new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
-                        "pdx_unlimiter",
-                        installDir.resolve("app"),
-                        true);
+                if (Settings.getInstance().isBootstrap()) {
+                    runBootstrapper(frame, args);
+                } else {
+                    runUpdater(frame, args);
+                }
             } catch (Exception e) {
                 exception(e);
             }
-
-
-            try {
-                update(frame,
-                        new URL("https://github.com/crschnick/pdxu_achievements/releases/latest/download/"),
-                        "pdxu_achievements",
-                        installDir.resolve("achievements"),
-                        false);
-            } catch (Exception e) {
-                exception(e);
-            }
+            frame.dispose();
         }
 
         try {
-            run(installDir, args);
+            if (Settings.getInstance().isBootstrap()) {
+                startLauncher(args);
+            } else {
+                startApp(args);
+            }
         } catch (Exception e) {
             exception(e);
         }
     }
 
-    private static void runBootstrapper(UpdaterGui frame, Path installDir, boolean doUpdate, String[] args) {
-        if (doUpdate) {
-            try {
-                update(frame,
-                        new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
-                        "pdxu_launcher",
-                        installDir.resolve("launcher"),
-                        true);
-            } catch (Exception e) {
-                exception(e);
-            }
+    private static void runUpdater(UpdaterGui frame, String[] args) {
+        try {
+            update(frame,
+                    new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
+                    "pdx_unlimiter",
+                    Settings.getInstance().getInstallPath().resolve("app"),
+                    true);
+        } catch (Exception e) {
+            exception(e);
+        }
+
+
+        try {
+            update(frame,
+                    new URL("https://github.com/crschnick/pdxu_achievements/releases/latest/download/"),
+                    "pdxu_achievements",
+                    Settings.getInstance().getInstallPath().resolve("achievements"),
+                    false);
+        } catch (Exception e) {
+            exception(e);
+        }
+    }
+
+    private static void runBootstrapper(UpdaterGui frame, String[] args) {
+        try {
+            update(frame,
+                    new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
+                    "pdxu_launcher",
+                    Settings.getInstance().getInstallPath().resolve("launcher"),
+                    true);
+        } catch (Exception e) {
+            exception(e);
         }
 
         try {
-            runLauncher(installDir, args);
+            startLauncher(args);
         } catch (IOException e) {
             exception(e);
         }
     }
 
-    private static boolean shouldDoUpdate(Path installPath, Path runPath, boolean isBootstrapper) {
-        var app = ProcessHandle.allProcesses()
-                .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.startsWith(installPath.resolve(Path.of("app", "bin", "java.exe")).toString()))
-                .collect(Collectors.toList());
-        app.forEach(s -> logger.info("Detected running app: " + s));
-
-        var launcher = ProcessHandle.allProcesses()
-                .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.startsWith(installPath.resolve(Path.of("launcher", "bin", "java.exe")).toString()))
-                .collect(Collectors.toList());
-        launcher.forEach(s -> logger.info("Detected running launcher: " + s));
-
-        var bootsrapExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
-        var bootstrappers = ProcessHandle.allProcesses()
-                .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.startsWith(bootsrapExecutable.toString()))
-                .collect(Collectors.toList());
-        bootstrappers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
-
-        if (isBootstrapper) {
-            // Starting launcher initially and no other bootstrapper instance is running.
-            return launcher.size() == 0 && bootstrappers.size() == 1;
-        } else {
-            // Starting app initially and no other launcher instance is running.
-            return app.size() == 0 && launcher.size() == 1;
-        }
-    }
-
-    private static void runLauncher(Path dir, String[] args) throws IOException {
+    private static void startLauncher(String[] args) throws IOException {
         if (SystemUtils.IS_OS_WINDOWS) {
-            String cmd = dir.resolve("launcher").resolve("bin").resolve("pdxu_launcher.bat").toString();
+            String cmd = Settings.getInstance().getInstallPath()
+                    .resolve("launcher").resolve("bin").resolve("pdxu_launcher.bat").toString();
             logger.info("Running launcher: " + cmd);
             var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
             argList.addAll(Arrays.asList(args));
             new ProcessBuilder(argList).start();
         } else {
-            new ProcessBuilder(dir.resolve("launcher").resolve("bin").resolve("pdxu_launcher").toString()).start();
+            new ProcessBuilder(Settings.getInstance().getInstallPath()
+                    .resolve("launcher").resolve("bin").resolve("pdxu_launcher").toString()).start();
         }
     }
 
-    private static void run(Path dir, String[] args) throws IOException {
+    private static void startApp(String[] args) throws IOException {
         if (SystemUtils.IS_OS_WINDOWS) {
-            String cmd = dir.resolve("app").resolve("bin").resolve("pdxu.bat").toString();
+            String cmd = Settings.getInstance().getInstallPath()
+                    .resolve("app").resolve("bin").resolve("pdxu.bat").toString();
             logger.info("Running: " + cmd);
             var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
             argList.addAll(Arrays.asList(args));
             new ProcessBuilder(argList).start();
         } else {
-            new ProcessBuilder(dir.resolve("launcher").resolve("bin").resolve("pdxu").toString()).start();
+            new ProcessBuilder(Settings.getInstance().getInstallPath()
+                    .resolve("launcher").resolve("bin").resolve("pdxu").toString()).start();
         }
     }
 
-    private static void initErrorHandler(boolean bootstrapper, boolean prod, String version, Path logDir) throws IOException {
+    private static void initErrorHandler() {
         System.setProperty("sentry.dsn", "https://f86d7649617d4c9cb95db5a19811305b@o462618.ingest.sentry.io/5468640");
         System.setProperty("sentry.stacktrace.hidecommon", "false");
         System.setProperty("sentry.stacktrace.app.packages", "");
         System.setProperty("sentry.uncaught.handler.enabled", "true");
         System.setProperty("sentry.servername", "");
-        if (prod) {
-            FileUtils.forceMkdir(logDir.toFile());
-            var l = logDir.resolve(bootstrapper ? "bootstrapper.log" : "launcher.log");
+        if (Settings.getInstance().isProduction()) {
+            try {
+                FileUtils.forceMkdir(Settings.getInstance().getLogsPath().toFile());
+                var l = Settings.getInstance().getLogsPath().resolve(Settings.getInstance().isBootstrap() ?
+                        "bootstrapper.log" : "launcher.log");
+                System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
-            System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
             System.setProperty("sentry.environment", "production");
-            System.setProperty("sentry.release", version);
+            System.setProperty("sentry.release", Settings.getInstance().getVersion());
         } else {
             //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
             System.setProperty("sentry.environment", "dev");
@@ -218,21 +164,34 @@ public class Updater {
 
         logger = LoggerFactory.getLogger(Updater.class);
 
-        logger.info("Initializing with " + "production: " + prod + ", bootstrap: " + bootstrapper);
+        logger.info("Initializing with " + "production: " + Settings.getInstance().isProduction() +
+                ", bootstrap: " + Settings.getInstance().isBootstrap());
         Sentry.init();
     }
 
     private static void update(UpdaterGui frame, URL url, String assetName, Path out, boolean platformSpecific) throws Exception {
-        Info info = getInfo(url, assetName, platformSpecific);
+        GithubHelper.DownloadInfo info = getInfo(url, assetName, platformSpecific);
         logger.info("Download info: " + info.toString());
-        if (!requiresUpdate(info, out)) {
+        if (!Settings.getInstance().forceUpdate() && !requiresUpdate(info, out)) {
             logger.info("No update required");
             return;
         }
 
+        try {
+            Path pathToChangelog = downloadFile(info.changelogUrl, p -> {
+            });
+            String changelog = Files.readString(pathToChangelog);
+
+            JDialog d = new JDialog(new ChangelogGui(changelog), "dialog Box");
+            d.setVisible(true);
+
+        } catch (Exception e) {
+            logger.info("No changelog found");
+        }
+
         frame.setVisible(true);
         logger.info("Downloading " + info.url.toString());
-        Path pathToNewest = downloadNewestVersion(info.url, frame::setProgress);
+        Path pathToNewest = downloadFile(info.url, frame::setProgress);
         logger.info("Download complete");
         logger.info("Deleting old version");
         deleteOldVersion(out);
@@ -242,7 +201,7 @@ public class Updater {
         logger.info("Update completed for " + out.getFileName().toString());
     }
 
-    private static boolean requiresUpdate(Info info, Path p) {
+    private static boolean requiresUpdate(GithubHelper.DownloadInfo info, Path p) {
         String v = "";
         try {
             v = Files.readString(p.resolve("version"));
@@ -278,94 +237,5 @@ public class Updater {
             }
         }
         f.close();
-    }
-
-    public static Path downloadNewestVersion(URL url, Consumer<Float> c) throws Exception {
-        byte[] file = executeGet(url, c);
-        c.accept(0.0f);
-        String tempDir = System.getProperty("java.io.tmpdir");
-        Path path = Paths.get(tempDir, url.getFile());
-        FileUtils.forceMkdirParent(path.toFile());
-        Files.write(path, file);
-        return path;
-    }
-
-    public static Info getInfo(URL targetURL, String fileName, boolean platformSpecific) throws Exception {
-        HttpURLConnection connection = null;
-
-        try {
-            //Create connection
-            connection = (HttpURLConnection) targetURL.openConnection();
-            connection.setRequestMethod("GET");
-            connection.addRequestProperty("User-Agent", "https://github.com/crschnick/pdxu_launcher");
-            connection.addRequestProperty("Accept", "*/*");
-            connection.setInstanceFollowRedirects(false);
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 302) {
-                throw new IOException("Got http " + responseCode + " for " + targetURL);
-            }
-
-            String suffix = platformSpecific ? ("-"
-                    + (SystemUtils.IS_OS_WINDOWS ? "windows" : (SystemUtils.IS_OS_LINUX ? "linux" : "mac"))) : "";
-            String location = connection.getHeaderField("location");
-            String version = Path.of(new URL(location).getFile()).getFileName().toString();
-            URL toDownload = new URL(location + "/" + fileName + suffix + ".zip");
-            Info i = new Info();
-            i.url = toDownload;
-            i.version = version;
-            return i;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    public static byte[] executeGet(URL targetURL, Consumer<Float> progress) throws Exception {
-        HttpURLConnection connection = null;
-
-        try {
-            //Create connection
-            connection = (HttpURLConnection) targetURL.openConnection();
-            connection.setRequestMethod("GET");
-            connection.addRequestProperty("User-Agent", "https://github.com/crschnick/pdxu_launcher");
-            connection.addRequestProperty("Accept", "*/*");
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 200) {
-                throw new IOException("Got http " + responseCode + " for " + targetURL);
-            }
-
-            InputStream is = connection.getInputStream();
-            int size = Integer.parseInt(connection.getHeaderField("Content-Length"));
-
-            byte[] line;
-            int bytes = 0;
-            ByteBuffer b = ByteBuffer.allocate(size);
-            while ((line = is.readNBytes(1000000)).length > 0) {
-                b.put(line);
-                bytes += line.length;
-                if (progress != null) progress.accept((float) bytes / (float) size);
-            }
-            return b.array();
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    public static class Info {
-        public URL url;
-        public String version;
-
-        @Override
-        public String toString() {
-            return "Info{" +
-                    "url=" + url +
-                    ", version='" + version + '\'' +
-                    '}';
-        }
     }
 }

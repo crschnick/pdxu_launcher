@@ -1,4 +1,6 @@
 .gradle/
 build/
-.idea
-sign
+.idea/
+sign/
+
+pdxu_launcher.properties
