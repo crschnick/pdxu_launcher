@@ -1,6 +1,5 @@
 package com.crschnick.pdx_unlimiter.updater;
 
-import io.sentry.Sentry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
@@ -26,30 +25,27 @@ public class Updater {
 
     private static Logger logger;
 
-    private static void exception(Exception e) {
-        Sentry.capture(e);
-        logger.error("Error occured", e);
-    }
-
     public static void main(String[] args) {
         Settings.init();
-        initErrorHandler();
+        ErrorHandler.init();
 
+        logger = LoggerFactory.getLogger(Updater.class);
         logger.info("Version " + Settings.getInstance().getVersion());
         logger.info("Passing arguments " + Arrays.toString(args));
 
-        boolean doUpdate = Settings.getInstance().doUpdate() && InstanceHandler.checkForOtherPdxuInstances();
+        boolean doUpdate = Settings.getInstance().autoupdateEnabled() &&
+                (args.length == 0 || InstanceHelper.checkForOtherPdxuInstances());
         logger.info("Doing update: " + doUpdate);
         if (doUpdate) {
             UpdaterGui frame = new UpdaterGui();
             try {
                 if (Settings.getInstance().isBootstrap()) {
-                    runBootstrapper(frame, args);
+                    runBootstrapper(frame);
                 } else {
-                    runUpdater(frame, args);
+                    runUpdater(frame);
                 }
             } catch (Exception e) {
-                exception(e);
+                ErrorHandler.handleException(e);
             }
             frame.dispose();
         }
@@ -61,11 +57,11 @@ public class Updater {
                 startApp(args);
             }
         } catch (Exception e) {
-            exception(e);
+            ErrorHandler.handleException(e);
         }
     }
 
-    private static void runUpdater(UpdaterGui frame, String[] args) {
+    private static void runUpdater(UpdaterGui frame) {
         try {
             update(frame,
                     new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
@@ -73,7 +69,7 @@ public class Updater {
                     Settings.getInstance().getInstallPath().resolve("app"),
                     true);
         } catch (Exception e) {
-            exception(e);
+            ErrorHandler.handleException(e);
         }
 
 
@@ -84,11 +80,11 @@ public class Updater {
                     Settings.getInstance().getInstallPath().resolve("achievements"),
                     false);
         } catch (Exception e) {
-            exception(e);
+            ErrorHandler.handleException(e);
         }
     }
 
-    private static void runBootstrapper(UpdaterGui frame, String[] args) {
+    private static void runBootstrapper(UpdaterGui frame) {
         try {
             update(frame,
                     new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
@@ -96,13 +92,7 @@ public class Updater {
                     Settings.getInstance().getInstallPath().resolve("launcher"),
                     true);
         } catch (Exception e) {
-            exception(e);
-        }
-
-        try {
-            startLauncher(args);
-        } catch (IOException e) {
-            exception(e);
+            ErrorHandler.handleException(e);
         }
     }
 
@@ -134,45 +124,12 @@ public class Updater {
         }
     }
 
-    private static void initErrorHandler() {
-        System.setProperty("sentry.dsn", "https://f86d7649617d4c9cb95db5a19811305b@o462618.ingest.sentry.io/5468640");
-        System.setProperty("sentry.stacktrace.hidecommon", "false");
-        System.setProperty("sentry.stacktrace.app.packages", "");
-        System.setProperty("sentry.uncaught.handler.enabled", "true");
-        System.setProperty("sentry.servername", "");
-        if (Settings.getInstance().isProduction()) {
-            try {
-                FileUtils.forceMkdir(Settings.getInstance().getLogsPath().toFile());
-                var l = Settings.getInstance().getLogsPath().resolve(Settings.getInstance().isBootstrap() ?
-                        "bootstrapper.log" : "launcher.log");
-                System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
-            System.setProperty("sentry.environment", "production");
-            System.setProperty("sentry.release", Settings.getInstance().getVersion());
-        } else {
-            //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-            System.setProperty("sentry.environment", "dev");
-        }
-
-        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
-
-        System.setProperty("org.slf4j.simpleLogger.showThreadName", "false");
-        System.setProperty("org.slf4j.simpleLogger.showShortLogName", "true");
-
-        logger = LoggerFactory.getLogger(Updater.class);
-
-        logger.info("Initializing with " + "production: " + Settings.getInstance().isProduction() +
-                ", bootstrap: " + Settings.getInstance().isBootstrap());
-        Sentry.init();
-    }
-
     private static void update(UpdaterGui frame, URL url, String assetName, Path out, boolean platformSpecific) throws Exception {
         GithubHelper.DownloadInfo info = getInfo(url, assetName, platformSpecific);
         logger.info("Download info: " + info.toString());
-        if (!Settings.getInstance().forceUpdate() && !requiresUpdate(info, out)) {
+
+        boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
+        if (!reqUpdate) {
             logger.info("No update required");
             return;
         }

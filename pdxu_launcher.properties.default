@@ -1,3 +1,4 @@
 dataDir=
 installDir=
 forceUpdate=true
+bootstrap=false

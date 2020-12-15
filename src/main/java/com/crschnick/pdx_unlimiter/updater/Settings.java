@@ -10,6 +10,7 @@ import java.util.Properties;
 
 public class Settings {
 
+    private static Settings INSTANCE;
     private Path logsPath;
     private Path installPath;
     private String version;
@@ -17,8 +18,6 @@ public class Settings {
     private boolean doUpdate;
     private boolean forceUpdate;
     private boolean bootstrap;
-
-    private static Settings INSTANCE;
 
     public static void init() {
         Properties props = new Properties();
@@ -28,7 +27,7 @@ public class Settings {
                 props.load(in);
                 in.close();
             } catch (Exception e) {
-
+                ErrorHandler.handleException(e);
             }
         }
 
@@ -74,16 +73,20 @@ public class Settings {
         try {
             s.version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
         } catch (IOException e) {
-
+            ErrorHandler.handleException(e);
         }
 
         s.production = !s.version.contains("dev");
 
-        s.forceUpdate = Optional.ofNullable(props.getProperty("bootstrap"))
+        s.bootstrap = Optional.ofNullable(props.getProperty("bootstrap"))
                 .map(Boolean::parseBoolean)
                 .orElse(s.version.contains("bootstrap"));
 
         INSTANCE = s;
+    }
+
+    public static Settings getInstance() {
+        return INSTANCE;
     }
 
     public Path getLogsPath() {
@@ -102,16 +105,12 @@ public class Settings {
         return production;
     }
 
-    public boolean doUpdate() {
+    public boolean autoupdateEnabled() {
         return doUpdate;
     }
 
     public boolean forceUpdate() {
         return forceUpdate;
-    }
-
-    public static Settings getInstance() {
-        return INSTANCE;
     }
 
     public boolean isBootstrap() {
