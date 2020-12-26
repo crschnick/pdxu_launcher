@@ -73,12 +73,7 @@ public class AppUpdater {
             logger.info("Running: " + cmd);
             var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
             argList.addAll(Arrays.asList(args));
-            var proc = new ProcessBuilder(argList).start();
-            try {
-                proc.waitFor();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            new ProcessBuilder(argList).start();
         } else {
         }
     }
