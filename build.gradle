@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.1.1'
+setVersion '2.1.2'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -138,7 +138,7 @@ task copyZipDll(type: Copy) {
 }
 
 task copyElevate(type: Copy) {
-    into "${buildDir}/dist/Pdx-Unlimiter/bin/"
+    into "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/"
     from "${projectDir}/res/Elevate.exe"
 }
 
