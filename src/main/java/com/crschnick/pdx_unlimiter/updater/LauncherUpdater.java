@@ -37,7 +37,7 @@ public class LauncherUpdater {
         logger.info("Download info: " + info.toString());
 
         boolean reqUpdate = Settings.getInstance().forceUpdate() ||
-                info.version.equals(Settings.getInstance().getVersion());
+                !info.version.equals(Settings.getInstance().getVersion());
         if (!reqUpdate) {
             logger.info("No launcher update required");
             return true;
@@ -45,9 +45,11 @@ public class LauncherUpdater {
 
         UpdaterGui frame = new UpdaterGui();
         frame.setVisible(true);
+        var l = Settings.getInstance().getLauncherInstallPath();
         logger.info("Downloading " + info.url.toString());
         try {
             Path pathToNewest = downloadFile(info.url, frame::setProgress);
+            frame.dispose();
             if (SystemUtils.IS_OS_WINDOWS) {
                 new ProcessBuilder(
                         Settings.getInstance().getElevatePath().toString(),
@@ -55,9 +57,9 @@ public class LauncherUpdater {
                         "/qn",
                         "/i", pathToNewest.toString(),
                         "/log", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
-                        "INSTALLDIR=" + Settings.getInstance().getInstallPath().toString()).start();
-                return false;
+                        l.map(p -> "INSTALLDIR=" + p.toString()).orElse("")).start();
             }
+            return false;
         } catch (Exception e) {
             ErrorHandler.handleException(e);
         }

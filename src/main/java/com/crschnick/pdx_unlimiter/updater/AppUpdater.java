@@ -40,7 +40,7 @@ public class AppUpdater {
                     new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
                     "pdx_unlimiter",
                     "zip",
-                    Settings.getInstance().getInstallPath().resolve("app"),
+                    Settings.getInstance().getAppInstallPath().resolve("app"),
                     true);
         } catch (Exception e) {
             ErrorHandler.handleException(e);
@@ -51,7 +51,7 @@ public class AppUpdater {
                     new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/"),
                     "pdxu_rakaly",
                     "zip",
-                    Settings.getInstance().getInstallPath().resolve("rakaly"),
+                    Settings.getInstance().getAppInstallPath().resolve("rakaly"),
                     false);
         } catch (Exception e) {
             ErrorHandler.handleException(e);
@@ -68,15 +68,18 @@ public class AppUpdater {
 
     private static void startApp(String[] args) throws IOException {
         if (SystemUtils.IS_OS_WINDOWS) {
-            String cmd = Settings.getInstance().getInstallPath()
+            String cmd = Settings.getInstance().getAppInstallPath()
                     .resolve("app").resolve("bin").resolve("pdxu.bat").toString();
             logger.info("Running: " + cmd);
             var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
             argList.addAll(Arrays.asList(args));
-            new ProcessBuilder(argList).start();
+            var proc = new ProcessBuilder(argList).start();
+            try {
+                proc.waitFor();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         } else {
-            new ProcessBuilder(Settings.getInstance().getInstallPath()
-                    .resolve("launcher").resolve("bin").resolve("pdxu").toString()).start();
         }
     }
 

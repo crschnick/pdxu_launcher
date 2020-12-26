@@ -12,7 +12,8 @@ public class Settings {
 
     private static Settings INSTANCE;
     private Path logsPath;
-    private Path installPath;
+    private Path appInstallPath;
+    private Path launcherInstallPath;
     private String version;
     private boolean production;
     private boolean updateLauncher;
@@ -41,14 +42,17 @@ public class Settings {
         s.logsPath = SystemUtils.IS_OS_WINDOWS ?
                 dataDir.resolve("logs") : Path.of("var", "logs", "Pdx-Unlimiter");
 
-        s.installPath = Optional.ofNullable(props.getProperty("installDir"))
+        s.launcherInstallPath = s.production ? Path.of(System.getProperty("java.home")).getParent() : null;
+
+        s.appInstallPath = Optional.ofNullable(props.getProperty("appInstallDir"))
                 .map(Path::of)
                 .filter(Path::isAbsolute)
                 .orElseGet(() -> {
                     if (SystemUtils.IS_OS_WINDOWS) {
-                        return Path.of(System.getProperty("java.home")).getParent();
+                        return Path.of(System.getenv("LOCALAPPDATA"))
+                                .resolve("Programs").resolve("Pdx-Unlimiter");
                     } else {
-                        return Path.of(System.getProperty("/opt/Pdx-Unlimiter/"));
+                        return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
                     }
                 });
 
@@ -96,8 +100,12 @@ public class Settings {
         return logsPath;
     }
 
-    public Path getInstallPath() {
-        return installPath;
+    public Optional<Path> getLauncherInstallPath() {
+        return Optional.ofNullable(launcherInstallPath);
+    }
+
+    public Path getAppInstallPath() {
+        return appInstallPath;
     }
 
     public String getVersion() {

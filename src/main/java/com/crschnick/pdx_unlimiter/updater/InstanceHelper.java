@@ -41,7 +41,8 @@ public class InstanceHelper {
         }
 
         var app = ProcessHandle.allProcesses()
-                .filter(h -> h.info().command().orElse("").startsWith(Settings.getInstance().getInstallPath().resolve(
+                .filter(h -> h.info().command().orElse("").startsWith(
+                        Settings.getInstance().getAppInstallPath().resolve(
                         Path.of("app", "bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
         app.forEach(s -> logger.info("Detected running app: " + s));

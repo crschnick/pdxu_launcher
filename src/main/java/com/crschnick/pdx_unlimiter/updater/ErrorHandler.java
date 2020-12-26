@@ -22,14 +22,16 @@ public class ErrorHandler {
         System.setProperty("sentry.stacktrace.app.packages", "");
         System.setProperty("sentry.uncaught.handler.enabled", "true");
         System.setProperty("sentry.servername", "");
+
+        try {
+            FileUtils.forceMkdir(Settings.getInstance().getLogsPath().toFile());
+        } catch (IOException e) {
+            ErrorHandler.handleException(e);
+        }
+
         if (Settings.getInstance().isProduction()) {
-            try {
-                FileUtils.forceMkdir(Settings.getInstance().getLogsPath().toFile());
-                var l = Settings.getInstance().getLogsPath().resolve("launcher.log");
-                System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            var l = Settings.getInstance().getLogsPath().resolve("launcher.log");
+            System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
             //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             System.setProperty("sentry.environment", "production");
             System.setProperty("sentry.release", Settings.getInstance().getVersion());
