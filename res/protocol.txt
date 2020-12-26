@@ -1,6 +1,6 @@
 
     <DirectoryRef Id="INSTALLDIR">
-        <Component Id="ProductComponent" Guid="{ff7090c9-e983-4093-bab8-0d2fadf929cf}">
+        <Component Id="Protocol" Guid="{ff7090c9-e983-4093-bab8-0d2fadf929cf}">
            <RegistryKey Root="HKCR"
                  Key="pdxu"
                  Action="createAndRemoveOnUninstall">

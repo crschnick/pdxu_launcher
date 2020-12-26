@@ -25,7 +25,7 @@ public class GithubHelper {
         return path;
     }
 
-    public static DownloadInfo getInfo(URL targetURL, String fileName, boolean platformSpecific) throws Exception {
+    public static DownloadInfo getInfo(URL targetURL, String fileName, String fileEnding, boolean platformSpecific) throws Exception {
         HttpURLConnection connection = null;
 
         try {
@@ -45,7 +45,7 @@ public class GithubHelper {
                     + (SystemUtils.IS_OS_WINDOWS ? "windows" : (SystemUtils.IS_OS_LINUX ? "linux" : "mac"))) : "";
             String location = connection.getHeaderField("location");
             String version = Path.of(new URL(location).getFile()).getFileName().toString();
-            URL toDownload = new URL(location + "/" + fileName + suffix + ".zip");
+            URL toDownload = new URL(location + "/" + fileName + suffix + "." + fileEnding);
             URL changelog = new URL(location + "/" + "changelog.txt");
             DownloadInfo i = new DownloadInfo();
             i.changelogUrl = changelog;

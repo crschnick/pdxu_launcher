@@ -28,47 +28,33 @@ public class InstanceHelper {
     }
 
     public static boolean checkForOtherPdxuInstances() {
-        var launcher = ProcessHandle.allProcesses()
+        Path runPath = Path.of(System.getProperty("java.home"));
+        var launcherExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
+        var launchers = ProcessHandle.allProcesses()
                 .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.startsWith(Settings.getInstance().getInstallPath().resolve(
-                        Path.of("launcher", "bin", "java.exe")).toString()))
+                .filter(s -> s.startsWith(launcherExecutable.toString()))
                 .collect(Collectors.toList());
-        launcher.forEach(s -> logger.info("Detected running launcher: " + s));
-        int launcherCount = Settings.getInstance().isProduction() ? launcher.size() : launcher.size() + 1;
-
-        if (Settings.getInstance().isBootstrap()) {
-            Path runPath = Path.of(System.getProperty("java.home"));
-            var bootsrapExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
-            var bootstrappers = ProcessHandle.allProcesses()
-                    .map(h -> h.info().command().orElse(""))
-                    .filter(s -> s.startsWith(bootsrapExecutable.toString()))
-                    .collect(Collectors.toList());
-            bootstrappers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
-            int count = Settings.getInstance().isProduction() ? bootstrappers.size() : bootstrappers.size() + 1;
-
-            // Starting launcher initially and no other bootstrapper instance is running.
-            return launcherCount == 0 && count == 1;
-        } else {
-            if (launcherCount > 1) {
-                return false;
-            }
-
-            var app = ProcessHandle.allProcesses()
-                    .filter(h -> h.info().command().orElse("").startsWith(Settings.getInstance().getInstallPath().resolve(
-                            Path.of("app", "bin", "java.exe")).toString()))
-                    .collect(Collectors.toList());
-            app.forEach(s -> logger.info("Detected running app: " + s));
-
-            if (app.size() > 0) {
-                boolean shouldKill = showKillInstanceDialog();
-                if (shouldKill) {
-                    app.forEach(ProcessHandle::destroyForcibly);
-                    return true;
-                }
-
-                return false;
-            }
-            return true;
+        launchers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
+        int launcherCount = Settings.getInstance().isProduction() ? launchers.size() : launchers.size() + 1;
+        if (launcherCount > 1) {
+            return false;
         }
+
+        var app = ProcessHandle.allProcesses()
+                .filter(h -> h.info().command().orElse("").startsWith(Settings.getInstance().getInstallPath().resolve(
+                        Path.of("app", "bin", "java.exe")).toString()))
+                .collect(Collectors.toList());
+        app.forEach(s -> logger.info("Detected running app: " + s));
+        if (app.size() > 0) {
+            boolean shouldKill = showKillInstanceDialog();
+            if (shouldKill) {
+                app.forEach(ProcessHandle::destroyForcibly);
+                return true;
+            }
+
+            return false;
+        }
+        return true;
+
     }
 }

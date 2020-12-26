@@ -15,9 +15,10 @@ public class Settings {
     private Path installPath;
     private String version;
     private boolean production;
-    private boolean doUpdate;
+    private boolean updateLauncher;
+    private boolean autoupdate;
     private boolean forceUpdate;
-    private boolean bootstrap;
+    private Path elevatePath;
 
     public static void init() {
         Properties props = new Properties();
@@ -45,10 +46,9 @@ public class Settings {
                 .filter(Path::isAbsolute)
                 .orElseGet(() -> {
                     if (SystemUtils.IS_OS_WINDOWS) {
-                        return Path.of(System.getenv("LOCALAPPDATA"))
-                                .resolve("Programs").resolve("Pdx-Unlimiter");
+                        return Path.of(System.getProperty("java.home")).getParent();
                     } else {
-                        return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
+                        return Path.of(System.getProperty("/opt/Pdx-Unlimiter/"));
                     }
                 });
 
@@ -56,16 +56,20 @@ public class Settings {
                 .map(Boolean::parseBoolean)
                 .orElse(false);
 
+        s.updateLauncher = Optional.ofNullable(props.getProperty("updateLauncher"))
+                .map(Boolean::parseBoolean)
+                .orElse(true);
+
         Path updateFile = dataDir.resolve("settings").resolve("update");
         if (Files.exists(updateFile)) {
             try {
-                s.doUpdate = Boolean.parseBoolean(Files.readString(updateFile));
+                s.autoupdate = Boolean.parseBoolean(Files.readString(updateFile));
             } catch (IOException e) {
                 e.printStackTrace();
-                s.doUpdate = true;
+                s.autoupdate = true;
             }
         } else {
-            s.doUpdate = true;
+            s.autoupdate = true;
         }
 
         Path runDir = Path.of(System.getProperty("java.home"));
@@ -78,9 +82,8 @@ public class Settings {
 
         s.production = !s.version.contains("dev");
 
-        s.bootstrap = Optional.ofNullable(props.getProperty("bootstrap"))
-                .map(Boolean::parseBoolean)
-                .orElse(s.version.contains("bootstrap"));
+        s.elevatePath = s.production ? Path.of(System.getProperty("java.home"), "bin", "Elevate.exe") :
+                Path.of("res", "Elevate.exe");
 
         INSTANCE = s;
     }
@@ -106,14 +109,18 @@ public class Settings {
     }
 
     public boolean autoupdateEnabled() {
-        return doUpdate;
+        return autoupdate;
     }
 
     public boolean forceUpdate() {
         return forceUpdate;
     }
 
-    public boolean isBootstrap() {
-        return bootstrap;
+    public boolean updateLauncher() {
+        return updateLauncher;
+    }
+
+    public Path getElevatePath() {
+        return elevatePath;
     }
 }

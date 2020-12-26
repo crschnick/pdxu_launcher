@@ -25,8 +25,7 @@ public class ErrorHandler {
         if (Settings.getInstance().isProduction()) {
             try {
                 FileUtils.forceMkdir(Settings.getInstance().getLogsPath().toFile());
-                var l = Settings.getInstance().getLogsPath().resolve(Settings.getInstance().isBootstrap() ?
-                        "bootstrapper.log" : "launcher.log");
+                var l = Settings.getInstance().getLogsPath().resolve("launcher.log");
                 System.setProperty("org.slf4j.simpleLogger.logFile", l.toString());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -46,8 +45,7 @@ public class ErrorHandler {
 
         logger = LoggerFactory.getLogger(Updater.class);
 
-        logger.info("Initializing with " + "production: " + Settings.getInstance().isProduction() +
-                ", bootstrap: " + Settings.getInstance().isBootstrap());
+        logger.info("Initializing with " + "production: " + Settings.getInstance().isProduction());
         Sentry.init();
     }
 }

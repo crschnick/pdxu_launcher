@@ -22,7 +22,7 @@
             End If
 
             If InStr(line, "<Feature>") > 0 Then
-                bundleText = bundleText & "<ComponentRef Id=""ProductComponent""/>" & vbCrLf
+                bundleText = bundleText & "<ComponentRef Id=""Protocol""/>" & vbCrLf
             End If
 
             i = i + 1
@@ -45,9 +45,12 @@
             line = mainFile.ReadLine
 
             If InStr(line, "</Feature>") > 0 Then
-                mainText = mainText & "      <ComponentRef Id=""ProductComponent""/>" & vbCrLf
+                mainText = mainText & "      <ComponentRef Id=""Protocol""/>" & vbCrLf
+            ElseIf InStr(line, "    <?ifdef JpIcon ?>") > 0 Then
+                mainText = mainText & "    <Property Id=""WixShellExecTarget"" Value=""[INSTALLDIR]Pdx-Unlimiter.exe"" /> <CustomAction Id=""LaunchApplication"" BinaryKey=""WixCA"" DllEntry=""WixShellExec"" Impersonate=""yes""/>" & vbCrLf
+            ElseIf InStr(line, "    </InstallExecuteSequence>") > 0 Then
+                mainText = mainText & "      <Custom Action=""LaunchApplication"" After=""InstallFinalize"" />" & vbCrLf
             End If
-
             mainText = mainText & line & vbCrLf
         Loop
 

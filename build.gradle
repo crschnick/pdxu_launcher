@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.0-beta10'
+setVersion '2.1-bootstrap'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -22,7 +22,6 @@ java {
 application {
     mainModule = 'com.crschnick.pdx_unlimiter.updater'
     mainClass = 'com.crschnick.pdx_unlimiter.updater.Updater'
-    applicationDefaultJvmArgs = System.hasProperty("pdxu.installDir") ? ['-Dpdxu.installDir=' + System.getProperty("pdxu.installDir")] : []
 }
 
 repositories {
@@ -95,7 +94,11 @@ build.dependsOn(copyOutput)
 
 jlink {
     imageDir = file("$buildDir/image")
-    options = ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages']
+    options = [
+            // '--strip-debug',
+            '--compress', '2',
+            '--no-header-files',
+            '--no-man-pages']
     launcher {
         name = 'pdxu_launcher'
     }
@@ -105,7 +108,7 @@ jlink {
     }
 
     jpackage {
-        appVersion = "2.0"
+        appVersion = "2.2"
         imageOutputDir = file("$buildDir/dist")
         installerOutputDir = file("$buildDir/bin")
         imageName = 'Pdx-Unlimiter'
@@ -135,6 +138,11 @@ task copyZipDll(type: Copy) {
     from "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/zip.dll"
 }
 
+task copyElevate(type: Copy) {
+    into "${buildDir}/dist/Pdx-Unlimiter/bin/"
+    from "${projectDir}/res/Elevate.exe"
+}
+
 task writePackageVersion(type: DefaultTask) {
     doLast {
         file("${buildDir}/dist/Pdx-Unlimiter/runtime/version").write(version)
@@ -142,6 +150,7 @@ task writePackageVersion(type: DefaultTask) {
 }
 jpackageImage.finalizedBy(writePackageVersion)
 jpackageImage.finalizedBy(copyZipDll)
+jpackageImage.finalizedBy(copyElevate)
 
 
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
