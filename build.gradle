@@ -200,7 +200,10 @@ if (os.windows) {
     jlink {
         jpackage {
             installerType = 'deb'
-            installerOptions.addAll('--linux-rpm-license-type', 'GPL', '--linux-shortcut')
+            installerOptions.addAll(
+                    '--linux-package-name', 'Pdx-Unlimiter',
+                    '--linux-menu-group', 'Pdx-Unlimiter',
+                    '--linux-shortcut')
         }
     }
 }
