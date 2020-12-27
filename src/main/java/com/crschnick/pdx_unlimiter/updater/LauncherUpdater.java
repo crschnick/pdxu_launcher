@@ -58,6 +58,12 @@ public class LauncherUpdater {
                         "/i", pathToNewest.toString(),
                         "/log", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
                         l.map(p -> "INSTALLDIR=" + p.toString()).orElse("")).start();
+            } else {
+                new ProcessBuilder(
+                        pathToNewest.toString(),
+                        ">",
+                        Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString())
+                        .start();
             }
             return false;
         } catch (Exception e) {

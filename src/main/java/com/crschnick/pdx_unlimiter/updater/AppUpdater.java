@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -67,15 +68,20 @@ public class AppUpdater {
     }
 
     private static void startApp(String[] args) throws IOException {
+        List<String> cmdList = new ArrayList<>();
         if (SystemUtils.IS_OS_WINDOWS) {
-            String cmd = Settings.getInstance().getAppInstallPath()
-                    .resolve("app").resolve("bin").resolve("pdxu.bat").toString();
-            logger.info("Running: " + cmd);
-            var argList = new ArrayList<>(List.of("cmd.exe", "/C", cmd));
-            argList.addAll(Arrays.asList(args));
-            new ProcessBuilder(argList).start();
+            cmdList.addAll(List.of(
+                    "cmd.exe",
+                    "/C",
+                    Settings.getInstance().getAppInstallPath()
+                            .resolve("app").resolve("bin").resolve("pdxu.bat").toString()));
         } else {
+            cmdList.add(Settings.getInstance().getAppInstallPath()
+                    .resolve("app").resolve("bin").resolve("pdxu").toString());
         }
+        logger.info("Running: " + String.join(" ", cmdList));
+        cmdList.addAll(Arrays.asList(args));
+        new ProcessBuilder(cmdList).start();
     }
 
 
