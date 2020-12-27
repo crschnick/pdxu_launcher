@@ -131,37 +131,42 @@ jlink {
     }
 }
 
-// To fix this bug: https://bugs.openjdk.java.net/browse/JDK-8254920
-task copyZipDll(type: Copy) {
-    into "${buildDir}/dist/Pdx-Unlimiter"
-    from "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/zip.dll"
-}
-
-task copyElevate(type: Copy) {
-    into "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/"
-    from "${projectDir}/res/Elevate.exe"
-}
-
-task writePackageVersion(type: DefaultTask) {
-    doLast {
-        file("${buildDir}/dist/Pdx-Unlimiter/runtime/version").write(version)
-    }
-}
-jpackageImage.finalizedBy(writePackageVersion)
-jpackageImage.finalizedBy(copyZipDll)
-jpackageImage.finalizedBy(copyElevate)
-
 
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 
 task createDist(type: DefaultTask)
 OperatingSystem os = DefaultNativePlatform.currentOperatingSystem;
 if (os.windows) {
+    // To fix this bug: https://bugs.openjdk.java.net/browse/JDK-8254920
+    task copyZipDll(type: Copy) {
+        into "${buildDir}/dist/Pdx-Unlimiter"
+        from "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/zip.dll"
+    }
+
+    jpackageImage.finalizedBy(copyZipDll)
+
+    task writePackageVersion(type: DefaultTask) {
+        doLast {
+            file("${buildDir}/dist/Pdx-Unlimiter/runtime/version").write(version)
+        }
+    }
+    jpackageImage.finalizedBy(writePackageVersion)
+
+    task copyElevate(type: Copy) {
+        into "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/"
+        from "${projectDir}/res/Elevate.exe"
+    }
+    jpackageImage.finalizedBy(copyElevate)
+
     jlink {
         jpackage {
             icon = "imgs/logo.ico"
             installerType = 'msi'
-            installerOptions.addAll('--win-dir-chooser', '--win-menu', '--win-shortcut', '--win-menu-group', 'Pdx-Unlimiter')
+            installerOptions.addAll(
+                    '--win-dir-chooser',
+                    '--win-menu',
+                    '--win-shortcut',
+                    '--win-menu-group', 'Pdx-Unlimiter')
         }
     }
 
@@ -185,6 +190,13 @@ if (os.windows) {
     }
     jpackageImage.finalizedBy(signExecutable)
 } else {
+    task writePackageVersion(type: DefaultTask) {
+        doLast {
+            file("${buildDir}/dist/Pdx-Unlimiter/lib/runtime/version").write(version)
+        }
+    }
+    jpackageImage.finalizedBy(writePackageVersion)
+
     jlink {
         jpackage {
             installerType = 'deb'

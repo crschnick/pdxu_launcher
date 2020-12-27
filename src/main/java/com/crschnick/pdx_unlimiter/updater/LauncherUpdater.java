@@ -45,12 +45,12 @@ public class LauncherUpdater {
 
         UpdaterGui frame = new UpdaterGui();
         frame.setVisible(true);
-        var l = Settings.getInstance().getLauncherInstallPath();
         logger.info("Downloading " + info.url.toString());
         try {
             Path pathToNewest = downloadFile(info.url, frame::setProgress);
             frame.dispose();
             if (SystemUtils.IS_OS_WINDOWS) {
+                var l = Settings.getInstance().getLauncherInstallPath();
                 new ProcessBuilder(
                         Settings.getInstance().getElevatePath().toString(),
                         "msiexec",
