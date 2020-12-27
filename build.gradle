@@ -201,7 +201,6 @@ if (os.windows) {
         jpackage {
             installerType = 'deb'
             installerOptions.addAll(
-                    '--linux-package-name', 'Pdx-Unlimiter',
                     '--linux-menu-group', 'Pdx-Unlimiter',
                     '--linux-shortcut')
         }

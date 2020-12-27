@@ -40,7 +40,7 @@ public class Settings {
                 .filter(Path::isAbsolute)
                 .orElse(Path.of(System.getProperty("user.home"), "Pdx-Unlimiter"));
         s.logsPath = SystemUtils.IS_OS_WINDOWS ?
-                dataDir.resolve("logs") : Path.of("var", "logs", "Pdx-Unlimiter");
+                dataDir.resolve("logs") : Path.of("/var/log/Pdx-Unlimiter");
 
         s.launcherInstallPath = s.production ? Path.of(System.getProperty("java.home")).getParent() : null;
 

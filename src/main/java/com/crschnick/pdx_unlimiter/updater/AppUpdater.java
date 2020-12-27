@@ -11,10 +11,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -153,6 +151,14 @@ public class AppUpdater {
                 FileUtils.forceMkdir(p.toFile());
             } else {
                 Files.write(p, f.getInputStream(e).readAllBytes());
+
+                // Workaround since the Java ZIP API can not access permissions
+                if (fileName.contains("bin")) {
+                    Files.setPosixFilePermissions(p, Set.of(
+                            PosixFilePermission.OWNER_EXECUTE,
+                            PosixFilePermission.GROUP_EXECUTE,
+                            PosixFilePermission.OTHERS_EXECUTE));
+                }
             }
         }
         f.close();
