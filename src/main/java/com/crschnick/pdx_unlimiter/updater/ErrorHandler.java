@@ -13,7 +13,11 @@ public class ErrorHandler {
 
     public static void handleException(Exception e) {
         Sentry.capture(e);
-        logger.error("Error occured", e);
+        if (logger != null) {
+            logger.error("Error occured", e);
+        } else {
+            e.printStackTrace();
+        }
     }
 
     public static void init() {
