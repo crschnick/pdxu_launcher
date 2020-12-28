@@ -38,9 +38,14 @@ public class Settings {
         Path dataDir = Optional.ofNullable(props.getProperty("dataDir"))
                 .map(Path::of)
                 .filter(Path::isAbsolute)
-                .orElse(Path.of(System.getProperty("user.home"), "Pdx-Unlimiter"));
-        s.logsPath = SystemUtils.IS_OS_WINDOWS ?
-                dataDir.resolve("logs") : Path.of("/var/log/Pdx-Unlimiter");
+                .orElseGet(() -> {
+                if (SystemUtils.IS_OS_WINDOWS) {
+                    return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter");
+                } else {
+                    return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
+                }
+            });
+        s.logsPath = dataDir.resolve("logs");
 
         s.launcherInstallPath = s.production ? Path.of(System.getProperty("java.home")).getParent() : null;
 

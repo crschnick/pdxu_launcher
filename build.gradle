@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.1.2'
+setVersion '2.1.4'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -100,7 +100,7 @@ jlink {
             '--no-header-files',
             '--no-man-pages']
     launcher {
-        name = 'pdxu_launcher'
+        name = 'Pdx-Unlimiter'
     }
 
     customImage {
@@ -112,7 +112,6 @@ jlink {
         installerOutputDir = file("$buildDir/bin")
         imageName = 'Pdx-Unlimiter'
         skipInstaller = false
-        installerName = 'Pdx-Unlimiter'
         applicationName = 'Pdx-Unlimiter'
         installerOptions.addAll(
                 '--temp', "$buildDir/tempfiles",
@@ -122,7 +121,6 @@ jlink {
                 '--license-file','res/license_file.txt',
                 '--vendor','Pdx-Unlimiter',
                 '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
-                '--file-associations', 'res/pua.properties',
                 '--file-associations', 'res/ck3.properties',
                 '--file-associations', 'res/eu4.properties',
                 '--file-associations', 'res/hoi4.properties',
@@ -201,7 +199,7 @@ if (os.windows) {
         jpackage {
             installerType = 'deb'
             installerOptions.addAll(
-                    '--linux-menu-group', 'Pdx-Unlimiter',
+                    '--linux-menu-group', 'Game;Utility;',
                     '--linux-shortcut')
         }
     }

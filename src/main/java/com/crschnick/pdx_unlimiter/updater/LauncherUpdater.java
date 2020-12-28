@@ -59,11 +59,19 @@ public class LauncherUpdater {
                         "/log", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
                         l.map(p -> "INSTALLDIR=" + p.toString()).orElse("")).start();
             } else {
-                new ProcessBuilder(
-                        pathToNewest.toString(),
-                        ">",
-                        Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString())
+                var pw = new ProcessBuilder(
+                        "/usr/bin/ssh-askpass",
+                        "A Pdx-Unlimiter launcher update is available. " +
+                                "To start it, your sudo password is required.")
                         .start();
+                String pwString = new String(pw.getInputStream().readAllBytes()).replace("\n", "");
+
+                var proc = new ProcessBuilder(
+                        "/bin/sh",
+                        "-c", "echo " + pwString + " | sudo -S dpkg -i " + pathToNewest.toString());
+                proc.redirectErrorStream(true);
+                proc.redirectOutput(Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toFile());
+                proc.start();
             }
             return false;
         } catch (Exception e) {

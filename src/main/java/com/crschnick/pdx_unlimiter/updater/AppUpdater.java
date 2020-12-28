@@ -152,12 +152,11 @@ public class AppUpdater {
             } else {
                 Files.write(p, f.getInputStream(e).readAllBytes());
 
-                // Workaround since the Java ZIP API can not access permissions
-                if (fileName.contains("bin")) {
-                    Files.setPosixFilePermissions(p, Set.of(
-                            PosixFilePermission.OWNER_EXECUTE,
-                            PosixFilePermission.GROUP_EXECUTE,
-                            PosixFilePermission.OTHERS_EXECUTE));
+                // Workaround since the Java Zip API can not access permissions
+                if (fileName.contains("bin") || fileName.contains("lib")) {
+                    if (!p.toFile().setExecutable(true)) {
+                        throw new IOException("Can't make " + p.toString() + " executable!");
+                    }
                 }
             }
         }
