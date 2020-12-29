@@ -195,12 +195,19 @@ if (os.windows) {
     }
     jpackageImage.finalizedBy(signExecutable)
 } else {
+    task renameInstaller(type: Copy) {
+        from ("$buildDir/bin")
+        include 'Pdx-Unlimiter-' + version + ".deb"
+        destinationDir file("$buildDir/bin")
+        rename 'Pdx-Unlimiter-' + version + ".deb", 'pdxu_installer-linux.deb'
+    }
+
     task writePackageVersion(type: DefaultTask) {
         doLast {
             file("${buildDir}/dist/Pdx-Unlimiter/lib/runtime/version").write(version)
         }
     }
-    jpackageImage.finalizedBy(writePackageVersion)
+    jpackageImage.finalizedBy(renameInstaller, writePackageVersion)
 
     jlink {
         jpackage {
