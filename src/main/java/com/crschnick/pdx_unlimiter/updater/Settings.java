@@ -42,7 +42,7 @@ public class Settings {
                 if (SystemUtils.IS_OS_WINDOWS) {
                     return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter");
                 } else {
-                    return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
+                    return Path.of(System.getProperty("user.home"), ".pdx-unlimiter");
                 }
             });
         s.logsPath = dataDir.resolve("logs");
