@@ -3,22 +3,28 @@ package com.crschnick.pdx_unlimiter.updater;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.IOException;
 
 public class ChangelogGui extends JFrame {
 
     public ChangelogGui(String text) {
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setUndecorated(true);
+        JTextArea l = new JTextArea(text);
+        l.setEditable(false);
+        l.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        add(l);
+
+        setTitle("Changelog");
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         try {
             Image icon = ImageIO.read(Updater.class.getResource("logo.png"));
             setIconImage(icon);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        setMinimumSize(new Dimension(300, 200));
+        setSize(l.getPreferredSize());
         setLocationRelativeTo(null);
-
-        JLabel l = new JLabel(text);
-        add(l);
     }
 }

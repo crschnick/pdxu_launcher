@@ -47,8 +47,12 @@ public class LauncherUpdater {
         frame.setVisible(true);
         logger.info("Downloading " + info.url.toString());
         try {
-            Path pathToNewest = downloadFile(info.url, frame::setProgress);
+            Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
             frame.dispose();
+            if (pathToNewest == null) {
+                return true;
+            }
+
             if (SystemUtils.IS_OS_WINDOWS) {
                 var l = Settings.getInstance().getLauncherInstallPath();
                 new ProcessBuilder(

@@ -11,13 +11,17 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 public class GithubHelper {
 
-    public static Path downloadFile(URL url, Consumer<Float> c) throws Exception {
-        byte[] file = executeGet(url, c);
-        c.accept(0.0f);
+    public static Path downloadFile(URL url, Consumer<Float> c, Callable<Boolean> shouldSkip) throws Exception {
+        byte[] file = executeGet(url, c, shouldSkip);
+        if (file == null) {
+            return null;
+        }
+
         String tempDir = System.getProperty("java.io.tmpdir");
         Path path = Paths.get(tempDir, url.getFile());
         FileUtils.forceMkdirParent(path.toFile());
@@ -59,7 +63,7 @@ public class GithubHelper {
         }
     }
 
-    private static byte[] executeGet(URL targetURL, Consumer<Float> progress) throws Exception {
+    private static byte[] executeGet(URL targetURL, Consumer<Float> progress, Callable<Boolean> shouldSkip) throws Exception {
         HttpURLConnection connection = null;
 
         try {
@@ -81,9 +85,15 @@ public class GithubHelper {
             int bytes = 0;
             ByteBuffer b = ByteBuffer.allocate(size);
             while ((line = is.readNBytes(1000000)).length > 0) {
+                if (shouldSkip.call()) {
+                    return null;
+                }
+
                 b.put(line);
                 bytes += line.length;
-                if (progress != null) progress.accept((float) bytes / (float) size);
+                if (progress != null) {
+                    progress.accept((float) bytes / (float) size);
+                }
             }
             return b.array();
         } finally {

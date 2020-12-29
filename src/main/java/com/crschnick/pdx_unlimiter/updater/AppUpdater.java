@@ -94,27 +94,32 @@ public class AppUpdater {
             return;
         }
 
+        frame.setVisible(true);
         try {
             Path pathToChangelog = downloadFile(info.changelogUrl, p -> {
-            });
+            }, () -> false);
             String changelog = Files.readString(pathToChangelog);
 
-            JDialog d = new JDialog(new ChangelogGui(changelog), "Changelog");
+            JFrame d = new ChangelogGui("Changelog for version " + info.version + ":\n\n" + changelog);
             d.setVisible(true);
 
         } catch (Exception e) {
             logger.info("No changelog found");
         }
 
-        frame.setVisible(true);
         logger.info("Downloading " + info.url.toString());
-        Path pathToNewest = downloadFile(info.url, frame::setProgress);
+        Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
         logger.info("Download complete");
+        if (pathToNewest == null) {
+            logger.info("Update skipped by user");
+            return;
+        }
         logger.info("Deleting old version");
         deleteOldVersion(out);
         logger.info("Unzipping new version");
         unzip(pathToNewest, out);
         frame.setVisible(false);
+        frame.setProgress(0);
         logger.info("Update completed for " + out.getFileName().toString());
     }
 

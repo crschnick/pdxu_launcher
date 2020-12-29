@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.1.4'
+setVersion '2.1.5'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -168,9 +168,16 @@ if (os.windows) {
         }
     }
 
-    task signInstaller(type: Exec) {
+    task renameInstaller(type: Copy) {
+        from ("$buildDir/bin")
+        include 'Pdx-Unlimiter-' + version + ".msi"
+        destinationDir file("$buildDir/bin")
+        rename 'Pdx-Unlimiter-' + version + ".msi", 'pdxu_installer-windows.msi'
+    }
+
+    task signInstaller(type: Exec, dependsOn: renameInstaller) {
         workingDir "$projectDir"
-        commandLine 'sign\\signtool.exe sign /f sign\\certificate.cer /fd sha256 /tr http://timestamp.comodoca.com?td=sha256 /td sha256 /v build\\bin\\Pdx-Unlimiter-2.0.msi'.split(" ")
+        commandLine 'sign\\signtool.exe sign /f sign\\certificate.cer /fd sha256 /tr http://timestamp.comodoca.com?td=sha256 /td sha256 /v build\\bin\\pdxu_installer-windows.msi'.split(" ")
 
     }
     jpackage.finalizedBy(signInstaller)
@@ -212,12 +219,4 @@ task writeImageVersion(type: DefaultTask, dependsOn: jpackage) {
     }
 }
 
-task zipImage(type: Zip, dependsOn: writeImageVersion) {
-    destinationDirectory = file("$buildDir/dist")
-    archiveAppendix = os.windows ? "windows" : "linux"
-    archiveBaseName = "pdxu_launcher"
-    archiveVersion = ""
-    from "${buildDir}/image"
-}
-
-createDist.finalizedBy(zipImage, jpackage)
+createDist.finalizedBy(jpackage)

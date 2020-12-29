@@ -3,6 +3,9 @@ package com.crschnick.pdx_unlimiter.updater;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.io.IOException;
 
 public class UpdaterGui extends JFrame {
@@ -10,10 +13,17 @@ public class UpdaterGui extends JFrame {
     private Image image;
 
     private float progress;
+    private boolean destroyed;
 
     public UpdaterGui() {
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setUndecorated(true);
+        setTitle("Pdx-Unlimiter Updater");
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                UpdaterGui.this.destroyed = true;
+                e.getWindow().dispose();
+            }
+        });
         try {
             Image icon = ImageIO.read(Updater.class.getResource("logo.png"));
             setIconImage(icon);
@@ -23,6 +33,10 @@ public class UpdaterGui extends JFrame {
         }
         setSize(image.getWidth(this), image.getHeight(this));
         setLocationRelativeTo(null);
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
     }
 
     public void setProgress(float progress) {
