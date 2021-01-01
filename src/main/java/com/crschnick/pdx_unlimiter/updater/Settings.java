@@ -39,12 +39,12 @@ public class Settings {
                 .map(Path::of)
                 .filter(Path::isAbsolute)
                 .orElseGet(() -> {
-                if (SystemUtils.IS_OS_WINDOWS) {
-                    return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter");
-                } else {
-                    return Path.of(System.getProperty("user.home"), ".pdx-unlimiter");
-                }
-            });
+                    if (SystemUtils.IS_OS_WINDOWS) {
+                        return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter");
+                    } else {
+                        return Path.of(System.getProperty("user.home"), ".pdx-unlimiter");
+                    }
+                });
         s.logsPath = dataDir.resolve("logs");
 
         s.launcherInstallPath = s.production ? Path.of(System.getProperty("java.home")).getParent() : null;

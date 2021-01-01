@@ -58,9 +58,9 @@ public class LauncherUpdater {
                 new ProcessBuilder(
                         Settings.getInstance().getElevatePath().toString(),
                         "msiexec",
-                        "/qn+",
+                        "/qb+",
                         "/i", pathToNewest.toString(),
-                        "/log", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
+                        "/lv", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
                         l.map(p -> "INSTALLDIR=" + p.toString()).orElse("")).start();
             } else {
                 var pw = new ProcessBuilder(
