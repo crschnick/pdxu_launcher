@@ -87,7 +87,7 @@ public class AppUpdater {
         boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
         if (!reqUpdate) {
             logger.info("No update required");
-            System.exit(0);
+            return;
         }
 
         frame.setVisible(true);

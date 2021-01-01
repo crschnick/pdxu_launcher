@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.1.7'
+setVersion '2.1.8'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -181,6 +181,7 @@ if (os.windows) {
             icon = "imgs/logo.ico"
             installerType = 'msi'
             installerOptions.addAll(
+                    '--win-upgrade-uuid', '7c4003b8-a911-4f73-9ed1-6607da01be9d',
                     '--win-dir-chooser',
                     '--win-menu',
                     '--win-shortcut',

@@ -40,18 +40,6 @@ public class InstanceHelper {
     }
 
     public static boolean checkForOtherPdxuInstances(String[] args) {
-        Path runPath = Path.of(System.getProperty("java.home"));
-        var launcherExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
-        var launchers = ProcessHandle.allProcesses()
-                .map(h -> h.info().command().orElse(""))
-                .filter(s -> s.startsWith(launcherExecutable.toString()))
-                .collect(Collectors.toList());
-        launchers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
-        int launcherCount = Settings.getInstance().isProduction() ? launchers.size() : launchers.size() + 1;
-        if (launcherCount > 1) {
-            return false;
-        }
-
         var app = ProcessHandle.allProcesses()
                 .filter(h -> h.info().command().orElse("").startsWith(
                         Settings.getInstance().getAppInstallPath().resolve(

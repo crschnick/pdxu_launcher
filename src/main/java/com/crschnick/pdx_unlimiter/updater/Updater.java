@@ -21,9 +21,9 @@ public class Updater {
             return;
         }
 
-        if (!LauncherUpdater.run()) {
+        if (LauncherUpdater.update()) {
             logger.info("Doing launcher update. Exiting ...");
-            return;
+            System.exit(0);
         }
 
         AppUpdater.run(args);

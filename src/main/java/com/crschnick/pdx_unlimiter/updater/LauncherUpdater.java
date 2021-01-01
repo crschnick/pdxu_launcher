@@ -14,11 +14,11 @@ public class LauncherUpdater {
 
     private static Logger logger = LoggerFactory.getLogger(LauncherUpdater.class);
 
-    public static boolean run() {
+    public static boolean update() {
         boolean doUpdate = Settings.getInstance().autoupdateEnabled() && Settings.getInstance().updateLauncher();
         logger.info("Doing launcher update: " + doUpdate);
         if (!doUpdate) {
-            return true;
+            return false;
         }
 
         GithubHelper.DownloadInfo info;
@@ -31,7 +31,7 @@ public class LauncherUpdater {
 
         } catch (Exception e) {
             ErrorHandler.handleException(e);
-            return true;
+            return false;
         }
 
         logger.info("Download info: " + info.toString());
@@ -40,7 +40,7 @@ public class LauncherUpdater {
                 !info.version.equals(Settings.getInstance().getVersion());
         if (!reqUpdate) {
             logger.info("No launcher update required");
-            return true;
+            return false;
         }
 
         UpdaterGui frame = new UpdaterGui();
@@ -50,7 +50,7 @@ public class LauncherUpdater {
             Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
             frame.dispose();
             if (pathToNewest == null) {
-                return true;
+                return false;
             }
 
             if (SystemUtils.IS_OS_WINDOWS) {
@@ -78,11 +78,11 @@ public class LauncherUpdater {
                 proc.redirectOutput(Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toFile());
                 proc.start();
             }
-            return false;
+            return true;
         } catch (Exception e) {
             ErrorHandler.handleException(e);
         }
         frame.dispose();
-        return true;
+        return false;
     }
 }
