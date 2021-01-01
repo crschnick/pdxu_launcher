@@ -1,9 +1,9 @@
 Package: pdx-unlimiter
-Version: 2.1.4
+Version: 2.1.9
 Section: games
 Maintainer: Christopher Schnick
 Priority: optional
 Architecture: amd64
 Provides: pdx-unlimiter
 Description: A tool aimed at improving the gameplay experience for various Paradox Games.
-Depends: libc6, xdg-utils, zlib1g, ssh-askpass-gnome, ssh-askpass
+Depends: libc6, xdg-utils, zlib1g, ssh-askpass-gnome

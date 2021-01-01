@@ -57,7 +57,7 @@ public class Settings {
                         return Path.of(System.getenv("LOCALAPPDATA"))
                                 .resolve("Programs").resolve("Pdx-Unlimiter");
                     } else {
-                        return Path.of(System.getProperty("user.home"), ".Pdx-Unlimiter");
+                        return Path.of(System.getProperty("user.home"), ".pdx-unlimiter");
                     }
                 });
 

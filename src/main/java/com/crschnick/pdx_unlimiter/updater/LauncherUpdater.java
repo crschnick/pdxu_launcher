@@ -73,7 +73,7 @@ public class LauncherUpdater {
                 var proc = new ProcessBuilder(
                         "/bin/sh",
                         "-c",
-                        "echo " + pwString + " | sudo -S apt install " + pathToNewest.toString());
+                        "echo " + pwString + " | sudo -S apt install --reinstall " + pathToNewest.toString());
                 proc.redirectErrorStream(true);
                 proc.redirectOutput(Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toFile());
                 proc.start();

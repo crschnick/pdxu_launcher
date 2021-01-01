@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.1.8'
+setVersion '2.1.9'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -218,17 +218,18 @@ if (os.windows) {
 } else {
     task renameInstaller(type: Copy) {
         from ("$buildDir/bin")
-        include 'Pdx-Unlimiter-' + version + ".deb"
+        include 'pdx-unlimiter_' + version + "-1_amd64.deb"
         destinationDir file("$buildDir/bin")
-        rename 'Pdx-Unlimiter-' + version + ".deb", 'pdxu_installer-linux.deb'
+        rename 'pdx-unlimiter_' + version + "-1_amd64.deb", 'pdxu_installer-linux.deb'
     }
+    jpackage.finalizedBy(renameInstaller)
 
     task writePackageVersion(type: DefaultTask) {
         doLast {
             file("${buildDir}/dist/Pdx-Unlimiter/lib/runtime/version").write(version)
         }
     }
-    jpackageImage.finalizedBy(renameInstaller, writePackageVersion)
+    jpackageImage.finalizedBy(writePackageVersion)
 
     jlink {
         jpackage {
@@ -237,13 +238,6 @@ if (os.windows) {
                     '--linux-menu-group', 'Game;Utility;',
                     '--linux-shortcut')
         }
-    }
-}
-
-
-task writeImageVersion(type: DefaultTask, dependsOn: jpackage) {
-    doLast {
-        file("${buildDir}/image/version").write(version)
     }
 }
 
