@@ -58,7 +58,7 @@ public class LauncherUpdater {
                 new ProcessBuilder(
                         Settings.getInstance().getElevatePath().toString(),
                         "msiexec",
-                        "/qn",
+                        "/qn+",
                         "/i", pathToNewest.toString(),
                         "/log", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
                         l.map(p -> "INSTALLDIR=" + p.toString()).orElse("")).start();
@@ -72,7 +72,8 @@ public class LauncherUpdater {
 
                 var proc = new ProcessBuilder(
                         "/bin/sh",
-                        "-c", "echo " + pwString + " | sudo -S dpkg -i " + pathToNewest.toString());
+                        "-c",
+                        "echo " + pwString + " | sudo -S apt install " + pathToNewest.toString());
                 proc.redirectErrorStream(true);
                 proc.redirectOutput(Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toFile());
                 proc.start();

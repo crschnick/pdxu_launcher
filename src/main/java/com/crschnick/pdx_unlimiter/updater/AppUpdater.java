@@ -11,9 +11,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -26,38 +27,34 @@ public class AppUpdater {
 
     public static void run(String[] args) {
         boolean doUpdate = Settings.getInstance().autoupdateEnabled() &&
-                (args.length == 0 || InstanceHelper.checkForOtherPdxuInstances());
+                InstanceHelper.checkForOtherPdxuInstances(args);
         logger.info("Doing app update: " + doUpdate);
-        if (!doUpdate) {
-            return;
+        if (doUpdate) {
+            UpdaterGui frame = new UpdaterGui();
+            try {
+                update(frame,
+                        new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
+                        "pdx_unlimiter",
+                        "zip",
+                        Settings.getInstance().getAppInstallPath().resolve("app"),
+                        true);
+            } catch (Exception e) {
+                ErrorHandler.handleException(e);
+            }
+
+            try {
+                update(frame,
+                        new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/"),
+                        "pdxu_rakaly",
+                        "zip",
+                        Settings.getInstance().getAppInstallPath().resolve("rakaly"),
+                        false);
+            } catch (Exception e) {
+                ErrorHandler.handleException(e);
+            }
+
+            frame.dispose();
         }
-
-        UpdaterGui frame = new UpdaterGui();
-
-        try {
-            update(frame,
-                    new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
-                    "pdx_unlimiter",
-                    "zip",
-                    Settings.getInstance().getAppInstallPath().resolve("app"),
-                    true);
-        } catch (Exception e) {
-            ErrorHandler.handleException(e);
-        }
-
-        try {
-            update(frame,
-                    new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/"),
-                    "pdxu_rakaly",
-                    "zip",
-                    Settings.getInstance().getAppInstallPath().resolve("rakaly"),
-                    false);
-        } catch (Exception e) {
-            ErrorHandler.handleException(e);
-        }
-
-        frame.dispose();
-
         try {
             startApp(args);
         } catch (IOException e) {
@@ -83,7 +80,6 @@ public class AppUpdater {
     }
 
 
-
     private static void update(UpdaterGui frame, URL url, String assetName, String fileEnding, Path out, boolean platformSpecific) throws Exception {
         GithubHelper.DownloadInfo info = getInfo(url, assetName, fileEnding, platformSpecific);
         logger.info("Download info: " + info.toString());
@@ -91,7 +87,7 @@ public class AppUpdater {
         boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
         if (!reqUpdate) {
             logger.info("No update required");
-            return;
+            System.exit(0);
         }
 
         frame.setVisible(true);

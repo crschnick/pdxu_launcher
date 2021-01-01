@@ -17,6 +17,10 @@ public class Updater {
         logger.info("Version " + Settings.getInstance().getVersion());
         logger.info("Passing arguments " + Arrays.toString(args));
 
+        if (InstanceHelper.areOtherLaunchersRunning()) {
+            return;
+        }
+
         if (!LauncherUpdater.run()) {
             logger.info("Doing launcher update. Exiting ...");
             return;

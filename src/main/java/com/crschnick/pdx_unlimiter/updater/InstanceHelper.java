@@ -27,7 +27,19 @@ public class InstanceHelper {
         return r == JOptionPane.YES_OPTION;
     }
 
-    public static boolean checkForOtherPdxuInstances() {
+    public static boolean areOtherLaunchersRunning() {
+        Path runPath = Path.of(System.getProperty("java.home"));
+        var launcherExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
+        var launchers = ProcessHandle.allProcesses()
+                .map(h -> h.info().command().orElse(""))
+                .filter(s -> s.startsWith(launcherExecutable.toString()))
+                .collect(Collectors.toList());
+        launchers.forEach(s -> logger.info("Detected running bootstrapper: " + s));
+        int launcherCount = Settings.getInstance().isProduction() ? launchers.size() : launchers.size() + 1;
+        return launcherCount > 1;
+    }
+
+    public static boolean checkForOtherPdxuInstances(String[] args) {
         Path runPath = Path.of(System.getProperty("java.home"));
         var launcherExecutable = runPath.getParent().resolve("Pdx-Unlimiter.exe");
         var launchers = ProcessHandle.allProcesses()
@@ -47,8 +59,7 @@ public class InstanceHelper {
                 .collect(Collectors.toList());
         app.forEach(s -> logger.info("Detected running app: " + s));
         if (app.size() > 0) {
-            boolean shouldKill = showKillInstanceDialog();
-            if (shouldKill) {
+            if (args.length == 0 && showKillInstanceDialog()) {
                 app.forEach(ProcessHandle::destroyForcibly);
                 return true;
             }
