@@ -4,10 +4,10 @@
         Const ForReading = 1
         Set objFSO = CreateObject("Scripting.FileSystemObject")
 
-        Set headerFile = objFSO.OpenTextFile("..\..\..\..\res\header.txt", ForReading)
+        Set headerFile = objFSO.OpenTextFile("..\..\..\..\res\windows\header.txt", ForReading)
         headerText = headerFile.ReadAll & vbCrLf
 
-        Set protocolFile = objFSO.OpenTextFile("..\..\..\..\res\protocol.txt", ForReading)
+        Set protocolFile = objFSO.OpenTextFile("..\..\..\..\res\windows\protocol.txt", ForReading)
         protocolText = protocolFile.ReadAll & vbCrLf
 
         Set bundleFile = objFSO.OpenTextFile("..\..\config\bundle.wxf", ForReading)

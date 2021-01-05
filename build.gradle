@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.2.0'
+setVersion '2.2.1'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())
@@ -146,10 +146,10 @@ jlink {
                 '--license-file','res/license_file.txt',
                 '--vendor','Pdx-Unlimiter',
                 '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
-                '--file-associations', resPath + '/ck3.properties',
-                '--file-associations', resPath + '/eu4.properties',
-                '--file-associations', resPath + '/hoi4.properties',
-                '--file-associations', resPath + '/sav.properties'
+                '--file-associations', 'res/ck3.properties',
+                '--file-associations', 'res/eu4.properties',
+                '--file-associations', 'res/hoi4.properties',
+                '--file-associations', 'res/sav.properties'
         )
     }
 }
@@ -225,6 +225,14 @@ if (os.windows) {
         rename 'pdx-unlimiter_' + version + "-1_amd64.deb", 'pdxu_installer-linux.deb'
     }
     jpackage.finalizedBy(renameInstaller)
+
+    task writeControlVersion(type: DefaultTask) {
+        doLast {
+            file("${buildDir}/tempfiles/DEBIAN/control")
+                    .write(file("${buildDir}/tempfiles/DEBIAN/control").text.replace('${version}', "" + getVersion()))
+        }
+    }
+    jpackage.dependsOn(writeControlVersion)
 
     task writePackageVersion(type: DefaultTask) {
         doLast {
