@@ -34,9 +34,8 @@ public class LauncherUpdater {
         return r == JOptionPane.YES_OPTION;
     }
 
-    public static boolean update() {
-        boolean doUpdate = Settings.getInstance().autoupdateEnabled() &&
-                Settings.getInstance().updateLauncher();
+    public static boolean update(String[] args) {
+        boolean doUpdate = InstanceHelper.shouldUpdateLauncher(args);
         logger.info("Doing launcher update: " + doUpdate);
         if (!doUpdate) {
             return false;

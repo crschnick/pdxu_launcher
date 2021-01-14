@@ -21,7 +21,7 @@ public class Updater {
             return;
         }
 
-        if (LauncherUpdater.update()) {
+        if (LauncherUpdater.update(args)) {
             logger.info("Doing launcher update. Exiting ...");
             System.exit(0);
         }

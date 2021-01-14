@@ -26,11 +26,7 @@ public class AppUpdater {
     private static Logger logger = LoggerFactory.getLogger(AppUpdater.class);
 
     public static void run(String[] args) {
-        if (!InstanceHelper.shouldStartApp(args)) {
-            return;
-        }
-
-        boolean doUpdate = Settings.getInstance().autoupdateEnabled();
+        boolean doUpdate = InstanceHelper.shouldUpdateApp(args);
         logger.info("Doing app update: " + doUpdate);
         if (doUpdate) {
             UpdaterGui frame = new UpdaterGui();
@@ -58,6 +54,7 @@ public class AppUpdater {
 
             frame.dispose();
         }
+
         try {
             startApp(args);
         } catch (IOException e) {
