@@ -228,8 +228,8 @@ if (os.windows) {
 
     task writeControlVersion(type: DefaultTask) {
         doLast {
-            file("${buildDir}/tempfiles/DEBIAN/control")
-                    .write(file("${buildDir}/tempfiles/DEBIAN/control").text.replace('${version}', "" + getVersion()))
+            file(resPath + "/control")
+                    .write(file(resPath + "/control.default").text.replace('${version}', "" + getVersion()))
         }
     }
     jpackage.dependsOn(writeControlVersion)
