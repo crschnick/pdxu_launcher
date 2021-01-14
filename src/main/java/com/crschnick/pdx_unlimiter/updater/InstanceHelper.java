@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ public class InstanceHelper {
         return launcherCount > 1;
     }
 
-    public static boolean checkForOtherPdxuInstances(String[] args) {
+    public static boolean shouldStartApp(String[] args) {
         var app = ProcessHandle.allProcesses()
                 .filter(h -> h.info().command().orElse("").startsWith(
                         Settings.getInstance().getAppInstallPath().resolve(
@@ -50,7 +51,14 @@ public class InstanceHelper {
         app.forEach(s -> logger.info("Detected running app: " + s));
         if (app.size() > 0) {
             if (args.length == 0 && showKillInstanceDialog()) {
-                app.forEach(ProcessHandle::destroyForcibly);
+                for (ProcessHandle a : app) {
+                    boolean killed = a.destroyForcibly();
+                    if (!killed) {
+                        ErrorHandler.handleException(
+                                new IOException("Could not kill running Pdx-Unlimiter process with pid " + a.pid()));
+                        return false;
+                    }
+                }
                 return true;
             }
 

@@ -84,7 +84,7 @@ public class GithubHelper {
             byte[] line;
             int bytes = 0;
             ByteBuffer b = ByteBuffer.allocate(size);
-            while ((line = is.readNBytes(1000000)).length > 0) {
+            while ((line = is.readNBytes(100000)).length > 0) {
                 if (shouldSkip.call()) {
                     return null;
                 }

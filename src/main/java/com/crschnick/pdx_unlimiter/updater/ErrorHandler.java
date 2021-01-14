@@ -35,6 +35,10 @@ public class ErrorHandler {
         if (logger != null) {
             logger.error("Error occured while launching", e);
             if (showErrorDialog(e.getMessage())) {
+                Sentry.configureScope(scope -> {
+                    var l = Settings.getInstance().getLogsPath().resolve("launcher.log");
+                    scope.addAttachment(new Attachment(l.toString()));
+                });
                 Sentry.captureException(e);
             }
         } else {
@@ -58,11 +62,6 @@ public class ErrorHandler {
             //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "info");
             opts.setEnvironment("production");
             opts.setRelease(Settings.getInstance().getVersion());
-
-            Sentry.configureScope(scope -> {
-                scope.addAttachment(new Attachment(l.toString()));
-            });
-
         } else {
             //System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "debug");
             opts.setEnvironment("dev");

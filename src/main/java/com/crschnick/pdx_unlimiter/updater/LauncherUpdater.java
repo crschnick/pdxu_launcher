@@ -4,6 +4,9 @@ import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
 import java.net.URL;
 import java.nio.file.Path;
 
@@ -14,8 +17,26 @@ public class LauncherUpdater {
 
     private static Logger logger = LoggerFactory.getLogger(LauncherUpdater.class);
 
+    private static boolean showUpdateDialog() {
+        Icon icon = null;
+        try {
+            icon = new ImageIcon(ImageIO.read(ErrorHandler.class.getResource("logo.png"))
+                    .getScaledInstance(50, 50, Image.SCALE_SMOOTH));
+        } catch (Exception ignored) {
+        }
+
+        int r = JOptionPane.showConfirmDialog(null, """
+                        A Pdx-Unlimiter launcher update is available.
+                        Do you want to install it?
+                        
+                        Afterwards, you have to start the Pdx-Unlimiter again.""",
+                "Pdx-Unlimiter", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, icon);
+        return r == JOptionPane.YES_OPTION;
+    }
+
     public static boolean update() {
-        boolean doUpdate = Settings.getInstance().autoupdateEnabled() && Settings.getInstance().updateLauncher();
+        boolean doUpdate = Settings.getInstance().autoupdateEnabled() &&
+                Settings.getInstance().updateLauncher() && showUpdateDialog();
         logger.info("Doing launcher update: " + doUpdate);
         if (!doUpdate) {
             return false;

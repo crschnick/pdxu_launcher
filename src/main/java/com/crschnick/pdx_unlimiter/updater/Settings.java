@@ -2,9 +2,11 @@ package com.crschnick.pdx_unlimiter.updater;
 
 import org.apache.commons.lang3.SystemUtils;
 
+import javax.swing.filechooser.FileSystemView;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -39,10 +41,13 @@ public class Settings {
                 .map(Path::of)
                 .filter(Path::isAbsolute)
                 .orElseGet(() -> {
-                    if (SystemUtils.IS_OS_WINDOWS) {
-                        return Path.of(System.getProperty("user.home"), "Pdx-Unlimiter");
+                    // Legacy support
+                    var legacyDataDir = Path.of(System.getProperty("user.home"),
+                            SystemUtils.IS_OS_WINDOWS ? "Pdx-Unlimiter" : ".pdx-unlimiter");
+                    if (Files.exists(legacyDataDir)) {
+                        return legacyDataDir;
                     } else {
-                        return Path.of(System.getProperty("user.home"), ".pdx-unlimiter");
+                        return getUserDocumentsPath().resolve("Pdx-Unlimiter");
                     }
                 });
         s.logsPath = dataDir.resolve("logs");
@@ -57,7 +62,7 @@ public class Settings {
                         return Path.of(System.getenv("LOCALAPPDATA"))
                                 .resolve("Programs").resolve("Pdx-Unlimiter");
                     } else {
-                        return Path.of(System.getProperty("user.home"), ".pdx-unlimiter");
+                        return dataDir;
                     }
                 });
 
@@ -95,6 +100,14 @@ public class Settings {
                 Path.of("res", "Elevate.exe");
 
         INSTANCE = s;
+    }
+
+    private static Path getUserDocumentsPath() {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            return Path.of(FileSystemView.getFileSystemView().getDefaultDirectory().getPath());
+        } else {
+            return Paths.get(System.getProperty("user.home"), ".local", "share");
+        }
     }
 
     public static Settings getInstance() {

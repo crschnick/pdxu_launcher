@@ -26,8 +26,11 @@ public class AppUpdater {
     private static Logger logger = LoggerFactory.getLogger(AppUpdater.class);
 
     public static void run(String[] args) {
-        boolean doUpdate = Settings.getInstance().autoupdateEnabled() &&
-                InstanceHelper.checkForOtherPdxuInstances(args);
+        if (!InstanceHelper.shouldStartApp(args)) {
+            return;
+        }
+
+        boolean doUpdate = Settings.getInstance().autoupdateEnabled();
         logger.info("Doing app update: " + doUpdate);
         if (doUpdate) {
             UpdaterGui frame = new UpdaterGui();
