@@ -28,7 +28,7 @@ public class LauncherUpdater {
         int r = JOptionPane.showConfirmDialog(null, """
                         A Pdx-Unlimiter launcher update is available.
                         Do you want to install it?
-                        
+                                                
                         Afterwards, you have to start the Pdx-Unlimiter again.""",
                 "Pdx-Unlimiter", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, icon);
         return r == JOptionPane.YES_OPTION;
@@ -36,7 +36,7 @@ public class LauncherUpdater {
 
     public static boolean update() {
         boolean doUpdate = Settings.getInstance().autoupdateEnabled() &&
-                Settings.getInstance().updateLauncher() && showUpdateDialog();
+                Settings.getInstance().updateLauncher();
         logger.info("Doing launcher update: " + doUpdate);
         if (!doUpdate) {
             return false;
@@ -57,8 +57,8 @@ public class LauncherUpdater {
 
         logger.info("Download info: " + info.toString());
 
-        boolean reqUpdate = Settings.getInstance().forceUpdate() ||
-                !info.version.equals(Settings.getInstance().getVersion());
+        boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
+                !info.version.equals(Settings.getInstance().getVersion())) && showUpdateDialog();
         if (!reqUpdate) {
             logger.info("No launcher update required");
             return false;
