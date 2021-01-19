@@ -65,7 +65,7 @@ public class InstanceHelper {
 
     public static boolean shouldUpdateApp(String[] args) {
         // First install
-        if (Files.exists(Settings.getInstance().getAppInstallPath())) {
+        if (!Files.exists(Settings.getInstance().getAppInstallPath())) {
             logger.debug("Detected first install");
             return true;
         }
