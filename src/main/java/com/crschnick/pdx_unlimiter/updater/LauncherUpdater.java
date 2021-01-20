@@ -44,7 +44,7 @@ public class LauncherUpdater {
         GithubHelper.DownloadInfo info;
         try {
             info = getInfo(
-                    new URL("https://github.com/crschnick/pdxu_installer/releases/latest/download/"),
+                    new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
                     "pdxu_installer",
                     SystemUtils.IS_OS_WINDOWS ? "msi" : "deb",
                     true);
