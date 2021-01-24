@@ -11,6 +11,10 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.Optional;
 
 public class ErrorHandler {
 
@@ -31,6 +35,22 @@ public class ErrorHandler {
         return r == JOptionPane.YES_OPTION;
     }
 
+    private static Optional<Path> getLatestPdxuLog() {
+        try {
+            return Files.list(Settings.getInstance().getLogsPath())
+                    .filter(p -> p.getFileName().toString().startsWith("pdxu"))
+                    .max(Comparator.comparingLong(p -> {
+                        try {
+                            return Files.getLastModifiedTime(p).toMillis();
+                        } catch (IOException e) {
+                            return 0;
+                        }
+                    }));
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
     public static void handleException(Throwable e) {
         if (logger != null) {
             logger.error("Error occured while launching", e);
@@ -38,6 +58,9 @@ public class ErrorHandler {
                 Sentry.configureScope(scope -> {
                     var l = Settings.getInstance().getLogsPath().resolve("launcher.log");
                     scope.addAttachment(new Attachment(l.toString()));
+                    getLatestPdxuLog().ifPresent(p -> {
+                        scope.addAttachment(new Attachment(p.toString()));
+                    });
                 });
                 Sentry.captureException(e);
             }

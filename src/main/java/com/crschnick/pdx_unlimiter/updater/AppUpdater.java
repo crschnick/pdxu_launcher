@@ -96,7 +96,7 @@ public class AppUpdater {
             }, () -> false);
             String changelog = Files.readString(pathToChangelog);
 
-            JFrame d = new ChangelogGui("Changelog for version " + info.version + ":\n\n" + changelog);
+            JFrame d = new ChangelogGui(changelog);
             d.setVisible(true);
 
         } catch (Exception e) {
