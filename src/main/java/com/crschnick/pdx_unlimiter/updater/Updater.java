@@ -26,6 +26,8 @@ public class Updater {
             System.exit(0);
         }
 
+        Eu4SeUpdater.update();
+
         AppUpdater.run(args);
     }
 }

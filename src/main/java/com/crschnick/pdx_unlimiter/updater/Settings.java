@@ -13,6 +13,7 @@ import java.util.Properties;
 public class Settings {
 
     private static Settings INSTANCE;
+    private Path dataDir;
     private Path logsPath;
     private Path appInstallPath;
     private Path launcherInstallPath;
@@ -22,6 +23,7 @@ public class Settings {
     private boolean autoupdate;
     private boolean forceUpdate;
     private Path elevatePath;
+    private boolean eu4seEnabled;
 
     public static void init() {
         Properties props = new Properties();
@@ -37,7 +39,7 @@ public class Settings {
 
         Settings s = new Settings();
 
-        Path dataDir = Optional.ofNullable(props.getProperty("dataDir"))
+        s.dataDir = Optional.ofNullable(props.getProperty("dataDir"))
                 .map(Path::of)
                 .filter(Path::isAbsolute)
                 .orElseGet(() -> {
@@ -50,7 +52,7 @@ public class Settings {
                         return getUserDocumentsPath().resolve("Pdx-Unlimiter");
                     }
                 });
-        s.logsPath = dataDir.resolve("logs");
+        s.logsPath = s.dataDir.resolve("logs");
 
         s.launcherInstallPath = s.production ? Path.of(System.getProperty("java.home")).getParent() : null;
 
@@ -62,7 +64,7 @@ public class Settings {
                         return Path.of(System.getenv("LOCALAPPDATA"))
                                 .resolve("Programs").resolve("Pdx-Unlimiter");
                     } else {
-                        return dataDir;
+                        return s.dataDir;
                     }
                 });
 
@@ -74,7 +76,7 @@ public class Settings {
                 .map(Boolean::parseBoolean)
                 .orElse(true);
 
-        Path updateFile = dataDir.resolve("settings").resolve("update");
+        Path updateFile = s.dataDir.resolve("settings").resolve("update");
         if (Files.exists(updateFile)) {
             try {
                 s.autoupdate = Boolean.parseBoolean(Files.readString(updateFile));
@@ -98,6 +100,14 @@ public class Settings {
 
         s.elevatePath = s.production ? Path.of(System.getProperty("java.home"), "bin", "Elevate.exe") :
                 Path.of("res", "Elevate.exe");
+
+        Path eu4se = s.dataDir.resolve("settings").resolve("eu4saveeditor");
+        try {
+            s.eu4seEnabled = !Files.exists(eu4se) || Boolean.parseBoolean(Files.readString(eu4se));
+        } catch (IOException e) {
+            ErrorHandler.handleException(e);
+            s.eu4seEnabled = false;
+        }
 
         INSTANCE = s;
     }
@@ -148,5 +158,13 @@ public class Settings {
 
     public Path getElevatePath() {
         return elevatePath;
+    }
+
+    public Path getDataDir() {
+        return dataDir;
+    }
+
+    public boolean eu4EditorEnabled() {
+        return eu4seEnabled;
     }
 }

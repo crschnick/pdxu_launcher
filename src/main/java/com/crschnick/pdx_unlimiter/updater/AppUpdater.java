@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.crschnick.pdx_unlimiter.updater.DirectoryHelper.deleteOldVersion;
+import static com.crschnick.pdx_unlimiter.updater.DirectoryHelper.unzip;
 import static com.crschnick.pdx_unlimiter.updater.GithubHelper.downloadFile;
 import static com.crschnick.pdx_unlimiter.updater.GithubHelper.getInfo;
 
@@ -128,39 +130,5 @@ public class AppUpdater {
         }
 
         return !v.equals(info.version);
-    }
-
-    public static void deleteOldVersion(Path path) throws Exception {
-        File f = path.toFile();
-        FileUtils.deleteDirectory(f);
-        FileUtils.forceMkdir(f);
-    }
-
-    private static void unzip(Path zipFilePath, Path destDir) throws Exception {
-        File dir = destDir.toFile();
-        if (dir.exists()) {
-            FileUtils.deleteDirectory(dir);
-        }
-        FileUtils.forceMkdir(dir);
-
-        ZipFile f = new ZipFile(zipFilePath.toString());
-        for (Iterator<? extends ZipEntry> it = f.stream().iterator(); it.hasNext(); ) {
-            ZipEntry e = it.next();
-            String fileName = e.getName();
-            Path p = destDir.resolve(fileName);
-            if (e.isDirectory()) {
-                FileUtils.forceMkdir(p.toFile());
-            } else {
-                Files.write(p, f.getInputStream(e).readAllBytes());
-
-                // Workaround since the Java Zip API can not access permissions
-                if (fileName.contains("bin") || fileName.contains("lib")) {
-                    if (!p.toFile().setExecutable(true)) {
-                        throw new IOException("Can't make " + p.toString() + " executable!");
-                    }
-                }
-            }
-        }
-        f.close();
     }
 }
