@@ -103,7 +103,7 @@ public class Settings {
 
         Path eu4se = s.dataDir.resolve("settings").resolve("eu4saveeditor");
         try {
-            s.eu4seEnabled = !Files.exists(eu4se) || Boolean.parseBoolean(Files.readString(eu4se));
+            s.eu4seEnabled = Files.exists(eu4se) && Boolean.parseBoolean(Files.readString(eu4se));
         } catch (IOException e) {
             ErrorHandler.handleException(e);
             s.eu4seEnabled = false;
