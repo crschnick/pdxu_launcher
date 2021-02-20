@@ -98,7 +98,7 @@ public class AppUpdater {
             }, () -> false);
             String changelog = Files.readString(pathToChangelog);
 
-            JFrame d = new ChangelogGui(changelog);
+            JFrame d = new ChangelogGui("Pdx-Unlimiter", changelog);
             d.setVisible(true);
 
         } catch (Exception e) {

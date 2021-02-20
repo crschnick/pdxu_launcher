@@ -7,13 +7,13 @@ import java.io.IOException;
 
 public class ChangelogGui extends JFrame {
 
-    public ChangelogGui(String text) {
+    public ChangelogGui(String name, String text) {
         JTextArea l = new JTextArea(text);
         l.setEditable(false);
         l.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         add(l);
 
-        setTitle("Changelog");
+        setTitle(name + " changelog");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         try {
             Image icon = ImageIO.read(Updater.class.getResource("logo.png"));

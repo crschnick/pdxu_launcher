@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -57,6 +58,21 @@ public class Eu4SeUpdater {
         }
 
         UpdaterGui frame = new UpdaterGui();
+        frame.setVisible(true);
+
+        try {
+            Path pathToChangelog = downloadFile(info.changelogUrl, p -> {
+            }, () -> false);
+            String changelog = Files.readString(pathToChangelog);
+
+            JFrame d = new ChangelogGui("Eu4SaveEditor", changelog);
+            d.setVisible(true);
+
+        } catch (Exception e) {
+            logger.info("No changelog found");
+        }
+
+
         try {
             logger.info("Downloading " + info.url.toString());
             Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
