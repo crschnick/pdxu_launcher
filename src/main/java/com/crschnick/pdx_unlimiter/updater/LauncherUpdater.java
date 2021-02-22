@@ -76,7 +76,7 @@ public class LauncherUpdater {
             }
 
             if (SystemUtils.IS_OS_WINDOWS) {
-                var l = Optional.of(Path.of("C:\\Program Files\\Pdx-Unlimiterss"));
+                var l = Settings.getInstance().getLauncherInstallPath();
                 logger.info("Existing launcher install at: " + l.map(Path::toString).orElse("none"));
 
                 var cmd = new ArrayList<>(java.util.List.of(
