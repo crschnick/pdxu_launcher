@@ -9,13 +9,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Optional;
 
 import static com.crschnick.pdx_unlimiter.updater.GithubHelper.downloadFile;
 import static com.crschnick.pdx_unlimiter.updater.GithubHelper.getInfo;
 
 public class LauncherUpdater {
 
-    private static Logger logger = LoggerFactory.getLogger(LauncherUpdater.class);
+    private static final Logger logger = LoggerFactory.getLogger(LauncherUpdater.class);
 
     private static boolean showUpdateDialog() {
         Icon icon = null;
@@ -74,14 +76,20 @@ public class LauncherUpdater {
             }
 
             if (SystemUtils.IS_OS_WINDOWS) {
-                var l = Settings.getInstance().getLauncherInstallPath();
-                new ProcessBuilder(
-                        Settings.getInstance().getElevatePath().toString(),
+                var l = Optional.of(Path.of("C:\\Program Files\\Pdx-Unlimiterss"));
+                logger.info("Existing launcher install at: " + l.map(Path::toString).orElse("none"));
+
+                var cmd = new ArrayList<>(java.util.List.of(
                         "msiexec",
-                        "/qb+",
                         "/i", pathToNewest.toString(),
-                        "/lv", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
-                        l.map(p -> "INSTALLDIR=" + p.toString()).orElse("")).start();
+                        "/li", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
+                        "/qb+"
+                ));
+                l.ifPresent(p -> cmd.add("INSTALLDIR=\"" + p.toString() + "\""));
+
+                var toRun = String.join(" ", cmd);
+                logger.debug("Running " + toRun);
+                Runtime.getRuntime().exec(toRun);
             } else {
                 var pw = new ProcessBuilder(
                         "/usr/bin/ssh-askpass",

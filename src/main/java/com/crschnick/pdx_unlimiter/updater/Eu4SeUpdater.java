@@ -42,18 +42,16 @@ public class Eu4SeUpdater {
                     "Eu4SaveEditor",
                     "zip",
                     true);
+            logger.info("Download info: " + info.toString());
 
+            boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
+                    !info.version.equals(DirectoryHelper.getVersion(target)));
+            if (!reqUpdate) {
+                logger.info("No Eu4SaveEditor update required");
+                return;
+            }
         } catch (Exception e) {
             ErrorHandler.handleException(e);
-            return;
-        }
-
-        logger.info("Download info: " + info.toString());
-
-        boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
-                !info.version.equals(Settings.getInstance().getVersion()));
-        if (!reqUpdate) {
-            logger.info("No Eu4SaveEditor update required");
             return;
         }
 

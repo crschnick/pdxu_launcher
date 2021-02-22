@@ -21,7 +21,7 @@ public class ChangelogGui extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        setMinimumSize(new Dimension(300, 200));
+        setMinimumSize(new Dimension(380, 160));
         setSize(l.getPreferredSize());
         setLocationRelativeTo(null);
     }

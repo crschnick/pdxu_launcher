@@ -12,6 +12,11 @@ import java.util.zip.ZipFile;
 
 public class DirectoryHelper {
 
+    public static String getVersion(Path dir) throws IOException {
+        Path vFile = dir.resolve("version");
+        return Files.readString(vFile);
+    }
+
     public static void writeVersion(Path dir, String version) throws IOException {
         Path vFile = dir.resolve("version");
         Files.writeString(vFile, version);

@@ -22,7 +22,6 @@ public class Settings {
     private boolean updateLauncher;
     private boolean autoupdate;
     private boolean forceUpdate;
-    private Path elevatePath;
     private boolean eu4seEnabled;
 
     public static void init() {
@@ -38,6 +37,17 @@ public class Settings {
         }
 
         Settings s = new Settings();
+
+        Path runDir = Path.of(System.getProperty("java.home"));
+        Path versionFile = runDir.resolve("version");
+        try {
+            s.version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
+        } catch (IOException e) {
+            ErrorHandler.handleException(e);
+            s.version = "unknown";
+        }
+
+        s.production = !s.version.contains("dev");
 
         s.dataDir = Optional.ofNullable(props.getProperty("dataDir"))
                 .map(Path::of)
@@ -87,19 +97,6 @@ public class Settings {
         } else {
             s.autoupdate = true;
         }
-
-        Path runDir = Path.of(System.getProperty("java.home"));
-        Path versionFile = runDir.resolve("version");
-        try {
-            s.version = Files.exists(versionFile) ? Files.readString(versionFile) : "dev";
-        } catch (IOException e) {
-            ErrorHandler.handleException(e);
-        }
-
-        s.production = !s.version.contains("dev");
-
-        s.elevatePath = s.production ? Path.of(System.getProperty("java.home"), "bin", "Elevate.exe") :
-                Path.of("res", "Elevate.exe");
 
         Path eu4se = s.dataDir.resolve("settings").resolve("eu4saveeditor");
         try {
@@ -154,10 +151,6 @@ public class Settings {
 
     public boolean updateLauncher() {
         return updateLauncher;
-    }
-
-    public Path getElevatePath() {
-        return elevatePath;
     }
 
     public Path getDataDir() {
