@@ -69,7 +69,8 @@ public class LauncherUpdater {
         frame.setVisible(true);
         logger.info("Downloading " + info.url.toString());
         try {
-            Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
+            Path pathToNewest = Settings.getInstance().getLauncherInstaller().orElse(
+                    downloadFile(info.url, frame::setProgress, frame::isDestroyed));
             frame.dispose();
             if (pathToNewest == null) {
                 return false;

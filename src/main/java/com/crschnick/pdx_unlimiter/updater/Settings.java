@@ -17,6 +17,7 @@ public class Settings {
     private Path logsPath;
     private Path appInstallPath;
     private Path launcherInstallPath;
+    private Path launcherInstaller;
     private String version;
     private boolean production;
     private boolean updateLauncher;
@@ -64,7 +65,11 @@ public class Settings {
                 });
         s.logsPath = s.dataDir.resolve("logs");
 
-        s.launcherInstallPath = s.production ? Path.of(System.getProperty("java.home")).getParent() : null;
+        s.launcherInstaller = Path.of(props.getProperty("launcherInstaller"));
+
+        s.launcherInstallPath = s.production ?
+                Path.of(System.getProperty("java.home")).getParent() :
+                Path.of(props.getProperty("launcherInstallLocation"));
 
         s.appInstallPath = Optional.ofNullable(props.getProperty("appInstallDir"))
                 .map(Path::of)
@@ -159,5 +164,9 @@ public class Settings {
 
     public boolean eu4EditorEnabled() {
         return eu4seEnabled;
+    }
+
+    public Optional<Path> getLauncherInstaller() {
+        return Optional.ofNullable(launcherInstaller);
     }
 }
