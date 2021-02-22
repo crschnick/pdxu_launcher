@@ -89,6 +89,8 @@ public class LauncherUpdater {
 
                 var toRun = String.join(" ", cmd);
                 logger.debug("Running " + toRun);
+
+                // Use Runtime since ProcessBuilder somehow breaks when using = signs
                 Runtime.getRuntime().exec(toRun);
             } else {
                 var pw = new ProcessBuilder(
