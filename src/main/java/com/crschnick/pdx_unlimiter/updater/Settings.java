@@ -65,11 +65,11 @@ public class Settings {
                 });
         s.logsPath = s.dataDir.resolve("logs");
 
-        s.launcherInstaller = Path.of(props.getProperty("launcherInstaller"));
+        s.launcherInstaller = Optional.ofNullable(props.getProperty("launcherInstaller")).map(Path::of).orElse(null);
 
         s.launcherInstallPath = s.production ?
                 Path.of(System.getProperty("java.home")).getParent() :
-                Path.of(props.getProperty("launcherInstallLocation"));
+                Optional.ofNullable(props.getProperty("launcherInstallLocation")).map(Path::of).orElse(null);
 
         s.appInstallPath = Optional.ofNullable(props.getProperty("appInstallDir"))
                 .map(Path::of)
