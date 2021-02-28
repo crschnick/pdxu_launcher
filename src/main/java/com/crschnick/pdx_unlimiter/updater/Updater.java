@@ -1,5 +1,6 @@
 package com.crschnick.pdx_unlimiter.updater;
 
+import com.crschnick.pdx_unlimiter.updater.util.InstanceHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -172,12 +172,6 @@ if (os.windows) {
     }
     jpackageImage.finalizedBy(writePackageVersion)
 
-    task copyElevate(type: Copy) {
-        into "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/"
-        from "${projectDir}/res/windows/Elevate.exe"
-    }
-    jpackageImage.finalizedBy(copyElevate)
-
     jlink {
         jpackage {
             icon = "imgs/logo.ico"

@@ -1,4 +1,6 @@
-package com.crschnick.pdx_unlimiter.updater;
+package com.crschnick.pdx_unlimiter.updater.gui;
+
+import com.crschnick.pdx_unlimiter.updater.Updater;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,8 +16,8 @@ public class UpdaterGui extends JFrame {
     private float progress;
     private boolean destroyed;
 
-    public UpdaterGui() {
-        setTitle("Pdx-Unlimiter Updater");
+    public UpdaterGui(String title) {
+        setTitle(title);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {

@@ -1,4 +1,4 @@
-package com.crschnick.pdx_unlimiter.updater;
+package com.crschnick.pdx_unlimiter.updater.util;
 
 import org.apache.commons.io.FileUtils;
 
@@ -7,14 +7,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class DirectoryHelper {
 
-    public static String getVersion(Path dir) throws IOException {
+    public static Optional<String> getVersion(Path dir) throws IOException {
         Path vFile = dir.resolve("version");
-        return Files.readString(vFile);
+        return Optional.ofNullable(Files.exists(vFile) ? Files.readString(vFile) : null);
     }
 
     public static void writeVersion(Path dir, String version) throws IOException {

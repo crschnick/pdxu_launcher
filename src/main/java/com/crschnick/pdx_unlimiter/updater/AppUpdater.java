@@ -1,40 +1,32 @@
 package com.crschnick.pdx_unlimiter.updater;
 
-import org.apache.commons.io.FileUtils;
+import com.crschnick.pdx_unlimiter.updater.util.GithubHelper;
+import com.crschnick.pdx_unlimiter.updater.util.InstanceHelper;
+import com.crschnick.pdx_unlimiter.updater.util.UpdateHelper;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
-import static com.crschnick.pdx_unlimiter.updater.DirectoryHelper.deleteOldVersion;
-import static com.crschnick.pdx_unlimiter.updater.DirectoryHelper.unzip;
-import static com.crschnick.pdx_unlimiter.updater.GithubHelper.downloadFile;
-import static com.crschnick.pdx_unlimiter.updater.GithubHelper.getInfo;
+import static com.crschnick.pdx_unlimiter.updater.util.GithubHelper.getInfo;
 
 public class AppUpdater {
 
-    private static Logger logger = LoggerFactory.getLogger(AppUpdater.class);
+    private static final Logger logger = LoggerFactory.getLogger(AppUpdater.class);
 
     public static void run(String[] args) {
         boolean doUpdate = InstanceHelper.shouldUpdateApp(args);
         logger.info("Doing app update: " + doUpdate);
         if (doUpdate) {
-            UpdaterGui frame = new UpdaterGui();
             try {
-                update(frame,
-                        new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
+                update(new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
                         "pdx_unlimiter",
                         "zip",
                         Settings.getInstance().getAppInstallPath().resolve("app"),
@@ -44,8 +36,7 @@ public class AppUpdater {
             }
 
             try {
-                update(frame,
-                        new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/"),
+                update(new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/"),
                         "pdxu_rakaly",
                         "zip",
                         Settings.getInstance().getAppInstallPath().resolve("rakaly"),
@@ -53,8 +44,6 @@ public class AppUpdater {
             } catch (Exception e) {
                 ErrorHandler.handleException(e);
             }
-
-            frame.dispose();
         }
 
         try {
@@ -82,7 +71,7 @@ public class AppUpdater {
     }
 
 
-    private static void update(UpdaterGui frame, URL url, String assetName, String fileEnding, Path out, boolean platformSpecific) throws Exception {
+    private static void update(URL url, String assetName, String fileEnding, Path out, boolean platformSpecific) throws Exception {
         GithubHelper.DownloadInfo info = getInfo(url, assetName, fileEnding, platformSpecific);
         logger.info("Download info: " + info.toString());
 
@@ -92,33 +81,7 @@ public class AppUpdater {
             return;
         }
 
-        frame.setVisible(true);
-        try {
-            Path pathToChangelog = downloadFile(info.changelogUrl, p -> {
-            }, () -> false);
-            String changelog = Files.readString(pathToChangelog);
-
-            JFrame d = new ChangelogGui("Pdx-Unlimiter", changelog);
-            d.setVisible(true);
-
-        } catch (Exception e) {
-            logger.info("No changelog found");
-        }
-
-        logger.info("Downloading " + info.url.toString());
-        Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
-        logger.info("Download complete");
-        if (pathToNewest == null) {
-            logger.info("Update skipped by user");
-            return;
-        }
-        logger.info("Deleting old version");
-        deleteOldVersion(out);
-        logger.info("Unzipping new version");
-        unzip(pathToNewest, out);
-        frame.setVisible(false);
-        frame.setProgress(0);
-        logger.info("Update completed for " + out.getFileName().toString());
+        UpdateHelper.update("Pdx-Unlimiter", out, info);
     }
 
     private static boolean requiresUpdate(GithubHelper.DownloadInfo info, Path p) {

@@ -1,4 +1,4 @@
-package com.crschnick.pdx_unlimiter.updater;
+package com.crschnick.pdx_unlimiter.updater.util;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;

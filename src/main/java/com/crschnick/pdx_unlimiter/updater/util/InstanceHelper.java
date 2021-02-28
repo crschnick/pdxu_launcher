@@ -1,5 +1,8 @@
-package com.crschnick.pdx_unlimiter.updater;
+package com.crschnick.pdx_unlimiter.updater.util;
 
+import com.crschnick.pdx_unlimiter.updater.ErrorHandler;
+import com.crschnick.pdx_unlimiter.updater.Settings;
+import com.crschnick.pdx_unlimiter.updater.Updater;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class InstanceHelper {
 
-    private static Logger logger = LoggerFactory.getLogger(InstanceHelper.class);
+    private static final Logger logger = LoggerFactory.getLogger(InstanceHelper.class);
 
     private static boolean showKillInstanceDialog() {
         Icon icon = null;

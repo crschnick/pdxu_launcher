@@ -1,5 +1,8 @@
 package com.crschnick.pdx_unlimiter.updater;
 
+import com.crschnick.pdx_unlimiter.updater.gui.UpdaterGui;
+import com.crschnick.pdx_unlimiter.updater.util.GithubHelper;
+import com.crschnick.pdx_unlimiter.updater.util.InstanceHelper;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,18 +11,18 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Optional;
 
-import static com.crschnick.pdx_unlimiter.updater.GithubHelper.downloadFile;
-import static com.crschnick.pdx_unlimiter.updater.GithubHelper.getInfo;
+import static com.crschnick.pdx_unlimiter.updater.util.GithubHelper.downloadFile;
+import static com.crschnick.pdx_unlimiter.updater.util.GithubHelper.getInfo;
 
 public class LauncherUpdater {
 
     private static final Logger logger = LoggerFactory.getLogger(LauncherUpdater.class);
 
-    private static boolean showUpdateDialog() {
+    private static boolean showUpdateDialog(String changelog) {
         Icon icon = null;
         try {
             icon = new ImageIcon(ImageIO.read(ErrorHandler.class.getResource("logo.png"))
@@ -28,10 +31,13 @@ public class LauncherUpdater {
         }
 
         int r = JOptionPane.showConfirmDialog(null, """
-                        A Pdx-Unlimiter launcher update is available.
-                        Do you want to install it?
-                                                
-                        Afterwards, you have to start the Pdx-Unlimiter again.""",
+                        A Pdx-Unlimiter launcher update is available:
+                        """ + (changelog != null ? changelog : "") +
+                        """
+                                                        
+                                                        
+                                Do you want to install it?         
+                                Afterwards, you have to start the Pdx-Unlimiter again.""",
                 "Pdx-Unlimiter", JOptionPane.YES_NO_OPTION, JOptionPane.ERROR_MESSAGE, icon);
         return r == JOptionPane.YES_OPTION;
     }
@@ -58,14 +64,25 @@ public class LauncherUpdater {
 
         logger.info("Download info: " + info.toString());
 
+        String changelog = null;
+        try {
+            Path pathToChangelog = downloadFile(info.changelogUrl, p -> {
+            }, () -> false);
+            if (pathToChangelog != null) {
+                changelog = Files.readString(pathToChangelog);
+            }
+        } catch (Exception e) {
+            logger.info("No changelog found");
+        }
+
         boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
-                !info.version.equals(Settings.getInstance().getVersion())) && showUpdateDialog();
+                !info.version.equals(Settings.getInstance().getVersion())) && showUpdateDialog(changelog);
         if (!reqUpdate) {
             logger.info("No launcher update required");
             return false;
         }
 
-        UpdaterGui frame = new UpdaterGui();
+        UpdaterGui frame = new UpdaterGui("Pdx-Unlimiter Launcher");
         frame.setVisible(true);
         logger.info("Downloading " + info.url.toString());
         try {

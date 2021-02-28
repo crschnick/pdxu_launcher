@@ -1,22 +1,22 @@
 package com.crschnick.pdx_unlimiter.updater;
 
+import com.crschnick.pdx_unlimiter.updater.util.DirectoryHelper;
+import com.crschnick.pdx_unlimiter.updater.util.GithubHelper;
+import com.crschnick.pdx_unlimiter.updater.util.UpdateHelper;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static com.crschnick.pdx_unlimiter.updater.DirectoryHelper.*;
-import static com.crschnick.pdx_unlimiter.updater.GithubHelper.downloadFile;
-import static com.crschnick.pdx_unlimiter.updater.GithubHelper.getInfo;
+import static com.crschnick.pdx_unlimiter.updater.util.GithubHelper.getInfo;
 
 public class Eu4SeUpdater {
 
-    private static Logger logger = LoggerFactory.getLogger(Eu4SeUpdater.class);
+    private static final Logger logger = LoggerFactory.getLogger(Eu4SeUpdater.class);
 
     public static void update() {
         boolean enabled = Settings.getInstance().eu4EditorEnabled();
@@ -45,7 +45,7 @@ public class Eu4SeUpdater {
             logger.info("Download info: " + info.toString());
 
             boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
-                    !info.version.equals(DirectoryHelper.getVersion(target)));
+                    DirectoryHelper.getVersion(target).map(v -> v.equals(info.version)).orElse(true));
             if (!reqUpdate) {
                 logger.info("No Eu4SaveEditor update required");
                 return;
@@ -55,40 +55,6 @@ public class Eu4SeUpdater {
             return;
         }
 
-        UpdaterGui frame = new UpdaterGui();
-        frame.setVisible(true);
-
-        try {
-            Path pathToChangelog = downloadFile(info.changelogUrl, p -> {
-            }, () -> false);
-            String changelog = Files.readString(pathToChangelog);
-
-            JFrame d = new ChangelogGui("Eu4SaveEditor", changelog);
-            d.setVisible(true);
-
-        } catch (Exception e) {
-            logger.info("No changelog found");
-        }
-
-
-        try {
-            logger.info("Downloading " + info.url.toString());
-            Path pathToNewest = downloadFile(info.url, frame::setProgress, frame::isDestroyed);
-            logger.info("Download complete");
-            if (pathToNewest == null) {
-                logger.info("Update skipped by user");
-                return;
-            }
-            logger.info("Deleting old version");
-            deleteOldVersion(target);
-            logger.info("Unzipping new version");
-            unzip(pathToNewest, target);
-            logger.info("Writing version");
-            writeVersion(target, info.version);
-            logger.info("Update completed for Eu4SaveEditor");
-        } catch (Exception e) {
-            ErrorHandler.handleException(e);
-        }
-        frame.dispose();
+        UpdateHelper.update("Eu4SaveEditor", target, info);
     }
 }
