@@ -38,6 +38,7 @@ public class ChangelogGui extends JFrame {
         setMinimumSize(new Dimension(380, 160));
         setSize(l.getPreferredSize());
         setLocationRelativeTo(null);
+        setAlwaysOnTop(true);
     }
 
     public static void displayChangelog(String name, URL url) {
@@ -62,7 +63,7 @@ public class ChangelogGui extends JFrame {
 
                     // Close changelog after 20s
                     if (Duration.between(start, Instant.now())
-                            .compareTo(Duration.of(20, ChronoUnit.SECONDS)) > 0) {
+                            .compareTo(Duration.of(30, ChronoUnit.SECONDS)) > 0) {
                         d.dispose();
                         return;
                     }

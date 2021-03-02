@@ -63,6 +63,8 @@ public class ErrorHandler {
                     });
                 });
                 Sentry.captureException(e);
+            } else {
+                Sentry.captureException(e);
             }
         } else {
             e.printStackTrace();
