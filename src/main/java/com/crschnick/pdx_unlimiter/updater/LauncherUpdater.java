@@ -30,9 +30,9 @@ public class LauncherUpdater {
         } catch (Exception ignored) {
         }
 
-        int r = JOptionPane.showConfirmDialog(null, """
-                        A Pdx-Unlimiter launcher update is available:
-                        """ + (changelog != null ? changelog : "") +
+        int r = JOptionPane.showConfirmDialog(null,
+                "A Pdx-Unlimiter launcher update is available" +
+                        (changelog != null ? ":\n" + changelog : ".") +
                         """
                                                         
                                                         

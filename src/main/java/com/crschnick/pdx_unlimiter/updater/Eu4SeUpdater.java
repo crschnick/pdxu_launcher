@@ -45,7 +45,7 @@ public class Eu4SeUpdater {
             logger.info("Download info: " + info.toString());
 
             boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
-                    DirectoryHelper.getVersion(target).map(v -> v.equals(info.version)).orElse(true));
+                    DirectoryHelper.getVersion(target).map(v -> !v.equals(info.version)).orElse(true));
             if (!reqUpdate) {
                 logger.info("No Eu4SaveEditor update required");
                 return;
