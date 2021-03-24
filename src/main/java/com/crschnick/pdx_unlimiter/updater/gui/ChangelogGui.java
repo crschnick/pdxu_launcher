@@ -36,7 +36,7 @@ public class ChangelogGui extends JFrame {
             e.printStackTrace();
         }
         setMinimumSize(new Dimension(380, 160));
-        setSize(l.getPreferredSize());
+        setSize(l.getPreferredSize().width + 30, l.getPreferredSize().height + 80);
         setLocationRelativeTo(null);
         setAlwaysOnTop(true);
     }

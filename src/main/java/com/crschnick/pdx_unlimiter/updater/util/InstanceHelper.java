@@ -84,27 +84,32 @@ public class InstanceHelper {
                                 Path.of("app", "bin", "java.exe")).toString()))
                 .collect(Collectors.toList());
         app.forEach(s -> logger.info("Detected running app: " + s));
-        if (app.size() > 0) {
-            if (args.length == 0) {
-                boolean shouldKill = showKillInstanceDialog();
-                if (shouldKill) {
-                    for (ProcessHandle a : app) {
-                        boolean killed = a.destroyForcibly();
-                        if (!killed) {
-                            ErrorHandler.handleException(
-                                    new IOException("Could not kill running Pdx-Unlimiter process with pid " + a.pid()));
-                            return false;
-                        }
-                    }
-                    logger.debug("Killed instances");
-                    return true;
-                } else {
-                    logger.debug("Chose not to kill instances");
+        if (app.size() == 0) {
+            return true;
+        }
+
+        // Just open file with existing pdxu instance, so don't update
+        if (args.length > 0) {
+            return false;
+        }
+
+        // Otherwise, try to kill existing instance(s)
+
+        boolean shouldKill = showKillInstanceDialog();
+        if (shouldKill) {
+            for (ProcessHandle a : app) {
+                boolean killed = a.destroyForcibly();
+                if (!killed) {
+                    ErrorHandler.handleException(
+                            new IOException("Could not kill running Pdx-Unlimiter process with pid " + a.pid()));
                     return false;
                 }
             }
+            logger.debug("Killed instances");
+            return true;
+        } else {
+            logger.debug("Chose not to kill instances");
+            return false;
         }
-        return true;
-
     }
 }

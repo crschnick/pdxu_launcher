@@ -26,21 +26,13 @@ public class AppUpdater {
         logger.info("Doing app update: " + doUpdate);
         if (doUpdate) {
             try {
-                update(new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/"),
-                        "pdx_unlimiter",
-                        "zip",
-                        Settings.getInstance().getAppInstallPath().resolve("app"),
-                        true);
+                updateApp();
             } catch (Exception e) {
                 ErrorHandler.handleException(e);
             }
 
             try {
-                update(new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/"),
-                        "pdxu_rakaly",
-                        "zip",
-                        Settings.getInstance().getAppInstallPath().resolve("rakaly"),
-                        false);
+                updateRakaly();
             } catch (Exception e) {
                 ErrorHandler.handleException(e);
             }
@@ -70,22 +62,40 @@ public class AppUpdater {
         new ProcessBuilder(cmdList).start();
     }
 
+    private static void updateApp() throws Exception {
+        var out = Settings.getInstance().getAppInstallPath().resolve("app");
+        var url = new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/");
 
-    private static void update(URL url, String assetName, String fileEnding, Path out, boolean platformSpecific) throws Exception {
-        GithubHelper.DownloadInfo info = getInfo(url, assetName, fileEnding, platformSpecific);
+        GithubHelper.DownloadInfo info = getInfo(url, "pdx_unlimiter", "zip", true);
         logger.info("Download info: " + info.toString());
-
         boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
         if (!reqUpdate) {
             logger.info("No update required");
             return;
         }
 
+        // Write latest version
+        Files.writeString(Settings.getInstance().getDataDir().resolve("settings").resolve("latest"), info.version);
         UpdateHelper.update("Pdx-Unlimiter", out, info);
     }
 
+    private static void updateRakaly() throws Exception {
+        var out = Settings.getInstance().getAppInstallPath().resolve("rakaly");
+        var url = new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/");
+
+        GithubHelper.DownloadInfo info = getInfo(url, "pdxu_rakaly", "zip", false);
+        logger.info("Download info: " + info.toString());
+        boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
+        if (!reqUpdate) {
+            logger.info("No update required");
+            return;
+        }
+
+        UpdateHelper.update("Rakaly", out, info);
+    }
+
     private static boolean requiresUpdate(GithubHelper.DownloadInfo info, Path p) {
-        String v = "";
+        String v;
         try {
             v = Files.readString(p.resolve("version"));
         } catch (IOException e) {
