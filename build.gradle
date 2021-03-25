@@ -5,7 +5,7 @@ plugins {
     id 'org.beryx.jlink' version '2.22.3'
 }
 
-setVersion '2.2.8'
+setVersion '2.2.9'
 
 if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
     file("${projectDir}/pdxu_launcher.properties").write(file("${projectDir}/pdxu_launcher.properties.default").getText())

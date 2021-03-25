@@ -24,7 +24,7 @@ public class AppUpdater {
     public static void run(String[] args) {
         boolean doUpdate = InstanceHelper.shouldUpdateApp(args);
         logger.info("Doing app update: " + doUpdate);
-        
+
         try {
             updateApp(doUpdate);
         } catch (Exception e) {
