@@ -24,18 +24,17 @@ public class AppUpdater {
     public static void run(String[] args) {
         boolean doUpdate = InstanceHelper.shouldUpdateApp(args);
         logger.info("Doing app update: " + doUpdate);
-        if (doUpdate) {
-            try {
-                updateApp();
-            } catch (Exception e) {
-                ErrorHandler.handleException(e);
-            }
+        
+        try {
+            updateApp(doUpdate);
+        } catch (Exception e) {
+            ErrorHandler.handleException(e);
+        }
 
-            try {
-                updateRakaly();
-            } catch (Exception e) {
-                ErrorHandler.handleException(e);
-            }
+        try {
+            updateRakaly(doUpdate);
+        } catch (Exception e) {
+            ErrorHandler.handleException(e);
         }
 
         try {
@@ -62,24 +61,30 @@ public class AppUpdater {
         new ProcessBuilder(cmdList).start();
     }
 
-    private static void updateApp() throws Exception {
+    private static void updateApp(boolean doUpdate) throws Exception {
         var out = Settings.getInstance().getAppInstallPath().resolve("app");
         var url = new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/");
 
         GithubHelper.DownloadInfo info = getInfo(url, "pdx_unlimiter", "zip", true);
         logger.info("Download info: " + info.toString());
+
+        // Write latest version
+        var latestFile = Settings.getInstance().getDataDir().resolve("settings").resolve("latest");
+        Files.createDirectories(latestFile.getParent());
+        Files.writeString(latestFile, info.version);
+
         boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
         if (!reqUpdate) {
             logger.info("No update required");
             return;
         }
 
-        // Write latest version
-        Files.writeString(Settings.getInstance().getDataDir().resolve("settings").resolve("latest"), info.version);
-        UpdateHelper.update("Pdx-Unlimiter", out, info);
+        if (doUpdate) {
+            UpdateHelper.update("Pdx-Unlimiter", out, info);
+        }
     }
 
-    private static void updateRakaly() throws Exception {
+    private static void updateRakaly(boolean doUpdate) throws Exception {
         var out = Settings.getInstance().getAppInstallPath().resolve("rakaly");
         var url = new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/");
 
@@ -91,7 +96,9 @@ public class AppUpdater {
             return;
         }
 
-        UpdateHelper.update("Rakaly", out, info);
+        if (doUpdate) {
+            UpdateHelper.update("Rakaly", out, info);
+        }
     }
 
     private static boolean requiresUpdate(GithubHelper.DownloadInfo info, Path p) {

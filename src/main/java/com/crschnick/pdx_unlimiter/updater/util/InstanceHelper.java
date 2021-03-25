@@ -75,7 +75,12 @@ public class InstanceHelper {
 
         if (!Settings.getInstance().autoupdateEnabled()) {
             logger.debug("Autoupdate disabled");
-            return false;
+
+            if (Settings.getInstance().isErrorExit()) {
+                logger.debug("However, error exit happened, therefore overriding autoupdate setting");
+            } else {
+                return false;
+            }
         }
 
         var app = ProcessHandle.allProcesses()

@@ -24,6 +24,7 @@ public class Settings {
     private boolean autoupdate;
     private boolean forceUpdate;
     private boolean eu4seEnabled;
+    private boolean errorExit;
 
     public static void init() {
         Properties props = new Properties();
@@ -96,11 +97,24 @@ public class Settings {
             try {
                 s.autoupdate = Boolean.parseBoolean(Files.readString(updateFile));
             } catch (IOException e) {
-                e.printStackTrace();
+                ErrorHandler.handleException(e);
                 s.autoupdate = true;
             }
         } else {
             s.autoupdate = true;
+        }
+
+        Path errorExitFile = s.dataDir.resolve("settings").resolve("error_exit");
+        if (Files.exists(errorExitFile)) {
+            try {
+                s.errorExit = Boolean.parseBoolean(Files.readString(errorExitFile));
+            } catch (IOException e) {
+                ErrorHandler.handleException(e);
+                s.errorExit = true;
+            }
+        } else {
+            // error_exit is true by default
+            s.errorExit = true;
         }
 
         Path eu4se = s.dataDir.resolve("settings").resolve("eu4saveeditor");
@@ -168,5 +182,9 @@ public class Settings {
 
     public Optional<Path> getLauncherInstaller() {
         return Optional.ofNullable(launcherInstaller);
+    }
+
+    public boolean isErrorExit() {
+        return errorExit;
     }
 }
