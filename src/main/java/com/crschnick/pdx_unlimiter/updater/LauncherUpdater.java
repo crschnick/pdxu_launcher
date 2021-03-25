@@ -100,7 +100,8 @@ public class LauncherUpdater {
                 var cmd = new ArrayList<>(java.util.List.of(
                         "msiexec",
                         "/i", pathToNewest.toString(),
-                        "/li", Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toString(),
+                        "/li", "\"" + Settings.getInstance().getLogsPath().resolve(
+                                "installer_" + info.version + ".log").toString() + "\"",
                         "/qb+"
                 ));
                 l.ifPresent(p -> cmd.add("INSTALLDIR=\"" + p.toString() + "\""));
@@ -116,14 +117,17 @@ public class LauncherUpdater {
                         "A Pdx-Unlimiter launcher update is available. " +
                                 "To start it, your sudo password is required.")
                         .start();
-                String pwString = new String(pw.getInputStream().readAllBytes()).replace("\n", "");
+                String pwString = new String(pw.getInputStream().readAllBytes())
+                        .replace("\n", "");
 
                 var proc = new ProcessBuilder(
                         "/bin/sh",
                         "-c",
-                        "echo " + pwString + " | sudo -S apt install --reinstall " + pathToNewest.toString());
+                        "echo \"" + pwString + "\" | sudo -S apt install --reinstall \"" +
+                                pathToNewest.toString() + "\"");
                 proc.redirectErrorStream(true);
-                proc.redirectOutput(Settings.getInstance().getLogsPath().resolve("installer_" + info.version + ".log").toFile());
+                proc.redirectOutput(Settings.getInstance().getLogsPath().resolve(
+                        "installer_" + info.version + ".log").toFile());
                 proc.start();
             }
             return true;
