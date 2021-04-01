@@ -83,10 +83,11 @@ public class InstanceHelper {
             }
         }
 
+        Path javaExecutable = Path.of("app", "bin", "java" +
+                (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
         var app = ProcessHandle.allProcesses()
                 .filter(h -> h.info().command().orElse("").startsWith(
-                        Settings.getInstance().getAppInstallPath().resolve(
-                                Path.of("app", "bin", "java.exe")).toString()))
+                        Settings.getInstance().getAppInstallPath().resolve(javaExecutable).toString()))
                 .collect(Collectors.toList());
         app.forEach(s -> logger.info("Detected running app: " + s));
         if (app.size() == 0) {
@@ -99,7 +100,6 @@ public class InstanceHelper {
         }
 
         // Otherwise, try to kill existing instance(s)
-
         boolean shouldKill = showKillInstanceDialog();
         if (shouldKill) {
             for (ProcessHandle a : app) {
@@ -110,6 +110,19 @@ public class InstanceHelper {
                     return false;
                 }
             }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
+
+            for (ProcessHandle a : app) {
+                if (a.isAlive()) {
+                    logger.debug("An instance is still alive");
+                    return false;
+                }
+            }
+
             logger.debug("Killed instances");
             return true;
         } else {
