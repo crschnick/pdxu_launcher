@@ -83,11 +83,11 @@ public class InstanceHelper {
             }
         }
 
-        Path javaExecutable = Path.of("app", "bin", "java" +
-                (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
+        Path pdxuExecutable = SystemUtils.IS_OS_WINDOWS ? Path.of("app", "Pdx-Unlimiter.exe") :
+                Path.of("app", "bin", "Pdx-Unlimiter");
         var app = ProcessHandle.allProcesses()
                 .filter(h -> h.info().command().orElse("").startsWith(
-                        Settings.getInstance().getAppInstallPath().resolve(javaExecutable).toString()))
+                        Settings.getInstance().getAppInstallPath().resolve(pdxuExecutable).toString()))
                 .collect(Collectors.toList());
         app.forEach(s -> logger.info("Detected running app: " + s));
         if (app.size() == 0) {
