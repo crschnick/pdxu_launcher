@@ -2,7 +2,7 @@
 plugins {
     id 'application'
     id "org.moditect.gradleplugin" version "1.0.0-rc3"
-    id 'org.beryx.jlink' version '2.22.3'
+    id 'org.beryx.jlink' version '2.24.4'
 }
 
 setVersion '2.2.10'
@@ -13,10 +13,8 @@ if (!file("${projectDir}/pdxu_launcher.properties").exists()) {
 
 java {
     modularity.inferModulePath = true
-
-    // Use JDK 15 to avoid this bug: https://bugs.openjdk.java.net/browse/JDK-8235915
-    sourceCompatibility = JavaVersion.VERSION_15
-    targetCompatibility = JavaVersion.VERSION_15
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 List<String> runArgs = [
@@ -37,10 +35,10 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: "2.11.3"
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.0-alpha1'
     implementation group: 'org.slf4j', name: 'slf4j-simple', version: '2.0.0-alpha1'
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.8.9'
     implementation files("$buildDir/generated-modules/commons-io-2.8.0.jar")
     implementation files("$buildDir/generated-modules/commons-lang3-3.11.jar")
-    implementation files("$buildDir/generated-modules/sentry-4.2.0.jar")
+    implementation files("$buildDir/generated-modules/sentry-5.4.1.jar")
 }
 
 addDependenciesModuleInfo {
@@ -70,7 +68,7 @@ addDependenciesModuleInfo {
             '''
         }
         module {
-            artifact 'io.sentry:sentry:4.2.0'
+            artifact 'io.sentry:sentry:5.4.1'
             moduleInfoSource = '''
                 module io.sentry {
                     exports io.sentry;
@@ -142,13 +140,15 @@ jlink {
                 '--temp', "$buildDir/tempfiles",
                 '--resource-dir', resPath,
                 '--verbose',
-                '--copyright','(C) 2020, Christopher Schnick',
+                '--copyright','(C) 2021, Christopher Schnick',
                 '--license-file','res/license_file.txt',
                 '--vendor','Pdx-Unlimiter',
                 '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
                 '--file-associations', 'res/ck3.properties',
                 '--file-associations', 'res/eu4.properties',
                 '--file-associations', 'res/hoi4.properties',
+                '--file-associations', 'res/ck2.properties',
+                '--file-associations', 'res/vic2.properties',
                 '--file-associations', 'res/sav.properties'
         )
     }
@@ -157,14 +157,6 @@ jlink {
 task createDist(type: DefaultTask)
 
 if (os.windows) {
-    // To fix this bug: https://bugs.openjdk.java.net/browse/JDK-8254920
-    task copyZipDll(type: Copy) {
-        into "${buildDir}/dist/Pdx-Unlimiter"
-        from "${buildDir}/dist/Pdx-Unlimiter/runtime/bin/zip.dll"
-    }
-
-    jpackageImage.finalizedBy(copyZipDll)
-
     task writePackageVersion(type: DefaultTask) {
         doLast {
             file("${buildDir}/dist/Pdx-Unlimiter/runtime/version").write(version)
