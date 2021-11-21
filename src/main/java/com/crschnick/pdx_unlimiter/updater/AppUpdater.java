@@ -32,12 +32,6 @@ public class AppUpdater {
         }
 
         try {
-            updateRakaly(doUpdate);
-        } catch (Exception e) {
-            ErrorHandler.handleException(e);
-        }
-
-        try {
             startApp(args);
         } catch (IOException e) {
             ErrorHandler.handleException(e);
@@ -86,28 +80,6 @@ public class AppUpdater {
 
         if (doUpdate) {
             UpdateHelper.update("Pdx-Unlimiter", out, info);
-        }
-    }
-
-    private static void updateRakaly(boolean doUpdate) throws Exception {
-        var out = Settings.getInstance().getAppInstallPath().resolve("rakaly");
-        var url = new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/");
-
-        var infoOpt = getInfo(url, "pdxu_rakaly", "zip", false);
-        if (infoOpt.isEmpty()) {
-            return;
-        }
-        var info = infoOpt.get();
-
-        logger.info("Download info: " + info.toString());
-        boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
-        if (!reqUpdate) {
-            logger.info("No update required");
-            return;
-        }
-
-        if (doUpdate) {
-            UpdateHelper.update("Rakaly", out, info);
         }
     }
 
