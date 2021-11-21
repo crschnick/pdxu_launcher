@@ -1,7 +1,10 @@
 package com.crschnick.pdx_unlimiter.updater.util;
 
+import com.crschnick.pdx_unlimiter.updater.Eu4SeUpdater;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,10 +14,14 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
 public class GithubHelper {
+
+    private static final int TIMEOUT = 1000;
+    private static final Logger logger = LoggerFactory.getLogger(GithubHelper.class);
 
     public static Path downloadFile(URL url, Consumer<Float> c, Callable<Boolean> shouldSkip) throws Exception {
         byte[] file = executeGet(url, c, shouldSkip);
@@ -29,7 +36,7 @@ public class GithubHelper {
         return path;
     }
 
-    public static DownloadInfo getInfo(URL targetURL, String fileName, String fileEnding, boolean platformSpecific) throws Exception {
+    public static Optional<DownloadInfo> getInfo(URL targetURL, String fileName, String fileEnding, boolean platformSpecific) {
         HttpURLConnection connection = null;
 
         try {
@@ -39,6 +46,8 @@ public class GithubHelper {
             connection.addRequestProperty("User-Agent", "https://github.com/crschnick/pdxu_launcher");
             connection.addRequestProperty("Accept", "*/*");
             connection.setInstanceFollowRedirects(false);
+            connection.setConnectTimeout(TIMEOUT);
+            connection.setReadTimeout(TIMEOUT);
 
             int responseCode = connection.getResponseCode();
             if (responseCode != 302) {
@@ -55,7 +64,10 @@ public class GithubHelper {
             i.changelogUrl = changelog;
             i.url = toDownload;
             i.version = version;
-            return i;
+            return Optional.of(i);
+        } catch (Exception ex) {
+            logger.error("Info connection failed", ex);
+            return Optional.empty();
         } finally {
             if (connection != null) {
                 connection.disconnect();

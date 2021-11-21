@@ -51,11 +51,15 @@ public class LauncherUpdater {
 
         GithubHelper.DownloadInfo info;
         try {
-            info = getInfo(
+            var infoOpt = getInfo(
                     new URL("https://github.com/crschnick/pdxu_launcher/releases/latest/download/"),
                     "pdxu_installer",
                     SystemUtils.IS_OS_WINDOWS ? "msi" : "deb",
                     true);
+            if (infoOpt.isEmpty()) {
+                return false;
+            }
+            info = infoOpt.get();
 
         } catch (Exception e) {
             ErrorHandler.handleException(e);

@@ -65,7 +65,12 @@ public class AppUpdater {
         var out = Settings.getInstance().getAppInstallPath().resolve("app");
         var url = new URL("https://github.com/crschnick/pdx_unlimiter/releases/latest/download/");
 
-        GithubHelper.DownloadInfo info = getInfo(url, "pdx_unlimiter", "zip", true);
+        var infoOpt = getInfo(url, "pdx_unlimiter", "zip", true);
+        if (infoOpt.isEmpty()) {
+            return;
+        }
+        var info = infoOpt.get();
+
         logger.info("Download info: " + info.toString());
 
         // Write latest version
@@ -88,7 +93,12 @@ public class AppUpdater {
         var out = Settings.getInstance().getAppInstallPath().resolve("rakaly");
         var url = new URL("https://github.com/crschnick/pdxu_rakaly/releases/latest/download/");
 
-        GithubHelper.DownloadInfo info = getInfo(url, "pdxu_rakaly", "zip", false);
+        var infoOpt = getInfo(url, "pdxu_rakaly", "zip", false);
+        if (infoOpt.isEmpty()) {
+            return;
+        }
+        var info = infoOpt.get();
+
         logger.info("Download info: " + info.toString());
         boolean reqUpdate = Settings.getInstance().forceUpdate() || requiresUpdate(info, out);
         if (!reqUpdate) {

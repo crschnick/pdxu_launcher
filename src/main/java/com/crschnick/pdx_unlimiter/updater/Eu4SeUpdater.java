@@ -37,11 +37,16 @@ public class Eu4SeUpdater {
 
         GithubHelper.DownloadInfo info;
         try {
-            info = getInfo(
+            var infoOpt = getInfo(
                     new URL("https://github.com/Osallek/Eu4SaveEditor/releases/latest/download/"),
                     "Eu4SaveEditor",
                     "zip",
                     true);
+            if (infoOpt.isEmpty()) {
+                return;
+            }
+            info = infoOpt.get();
+
             logger.info("Download info: " + info.toString());
 
             boolean reqUpdate = (Settings.getInstance().forceUpdate() ||
