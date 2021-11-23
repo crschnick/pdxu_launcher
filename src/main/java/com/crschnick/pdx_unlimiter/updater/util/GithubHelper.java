@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 
 public class GithubHelper {
 
-    private static final int TIMEOUT = 1000;
     private static final Logger logger = LoggerFactory.getLogger(GithubHelper.class);
 
     public static Path downloadFile(URL url, Consumer<Float> c, Callable<Boolean> shouldSkip) throws Exception {
@@ -46,8 +45,8 @@ public class GithubHelper {
             connection.addRequestProperty("User-Agent", "https://github.com/crschnick/pdxu_launcher");
             connection.addRequestProperty("Accept", "*/*");
             connection.setInstanceFollowRedirects(false);
-            connection.setConnectTimeout(TIMEOUT);
-            connection.setReadTimeout(TIMEOUT);
+            connection.setConnectTimeout(3000);
+            connection.setReadTimeout(3000);
 
             int responseCode = connection.getResponseCode();
             if (responseCode != 302) {
