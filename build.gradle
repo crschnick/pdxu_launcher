@@ -127,7 +127,13 @@ jlink {
     }
 
     customImage {
-        appModules = ['com.crschnick.pdx_unlimiter.updater', 'org.slf4j', 'org.slf4j.simple', 'jdk.crypto.ec']
+        appModules = [
+                'com.crschnick.pdx_unlimiter.updater',
+                'org.slf4j',
+                'org.slf4j.simple',
+                'jdk.crypto.ec',
+                'jdk.accessibility'
+        ]
     }
 
     jpackage {
@@ -177,7 +183,7 @@ if (os.windows) {
         }
     }
 
-    task renameInstaller(type: Copy) {
+    task renameInstaller(type: Copy, dependsOn: jpackage) {
         from ("$buildDir/bin")
         include 'Pdx-Unlimiter-' + version + ".msi"
         destinationDir file("$buildDir/bin")
@@ -204,7 +210,7 @@ if (os.windows) {
     }
     jpackageImage.finalizedBy(signExecutable)
 } else {
-    task renameInstaller(type: Copy) {
+    task renameInstaller(type: Copy, dependsOn: jpackage) {
         from ("$buildDir/bin")
         include 'pdx-unlimiter_' + version + "-1_amd64.deb"
         destinationDir file("$buildDir/bin")
