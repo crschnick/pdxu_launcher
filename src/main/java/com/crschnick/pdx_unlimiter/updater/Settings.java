@@ -16,11 +16,8 @@ public class Settings {
     private Path dataDir;
     private Path logsPath;
     private Path appInstallPath;
-    private Path launcherInstallPath;
-    private Path launcherInstaller;
     private String version;
     private boolean production;
-    private boolean updateLauncher;
     private boolean autoupdate;
     private boolean forceUpdate;
     private boolean eu4seEnabled;
@@ -66,12 +63,6 @@ public class Settings {
                 });
         s.logsPath = s.dataDir.resolve("logs");
 
-        s.launcherInstaller = Optional.ofNullable(props.getProperty("launcherInstaller")).map(Path::of).orElse(null);
-
-        s.launcherInstallPath = s.production ?
-                Path.of(System.getProperty("java.home")).getParent() :
-                Optional.ofNullable(props.getProperty("launcherInstallLocation")).map(Path::of).orElse(null);
-
         s.appInstallPath = Optional.ofNullable(props.getProperty("appInstallDir"))
                 .map(Path::of)
                 .filter(Path::isAbsolute)
@@ -87,10 +78,6 @@ public class Settings {
         s.forceUpdate = Optional.ofNullable(props.getProperty("forceUpdate"))
                 .map(Boolean::parseBoolean)
                 .orElse(false);
-
-        s.updateLauncher = Optional.ofNullable(props.getProperty("updateLauncher"))
-                .map(Boolean::parseBoolean)
-                .orElse(true);
 
         Path updateFile = s.dataDir.resolve("settings").resolve("update");
         if (Files.exists(updateFile)) {
@@ -144,10 +131,6 @@ public class Settings {
         return logsPath;
     }
 
-    public Optional<Path> getLauncherInstallPath() {
-        return Optional.ofNullable(launcherInstallPath);
-    }
-
     public Path getAppInstallPath() {
         return appInstallPath;
     }
@@ -168,20 +151,12 @@ public class Settings {
         return forceUpdate;
     }
 
-    public boolean updateLauncher() {
-        return updateLauncher;
-    }
-
     public Path getDataDir() {
         return dataDir;
     }
 
     public boolean eu4EditorEnabled() {
         return eu4seEnabled;
-    }
-
-    public Optional<Path> getLauncherInstaller() {
-        return Optional.ofNullable(launcherInstaller);
     }
 
     public boolean isErrorExit() {

@@ -22,13 +22,7 @@ public class Updater {
             return;
         }
 
-        if (LauncherUpdater.update(args)) {
-            logger.info("Doing launcher update. Exiting ...");
-            System.exit(0);
-        }
-
         Eu4SeUpdater.update();
-
         AppUpdater.run(args);
     }
 }

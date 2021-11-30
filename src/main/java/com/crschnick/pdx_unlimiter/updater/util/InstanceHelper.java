@@ -46,26 +46,6 @@ public class InstanceHelper {
         return launcherCount > 1;
     }
 
-
-    public static boolean shouldUpdateLauncher(String[] args) {
-        if (!Settings.getInstance().autoupdateEnabled()) {
-            logger.debug("Autoupdate disabled");
-            return false;
-        }
-
-        if (!Settings.getInstance().updateLauncher()) {
-            logger.debug("Dev disabled updates");
-            return false;
-        }
-
-        if (args.length > 0) {
-            logger.debug("Passing arguments");
-            return false;
-        }
-
-        return true;
-    }
-
     public static boolean shouldUpdateApp(String[] args) {
         // First install
         if (!Files.exists(Settings.getInstance().getAppInstallPath())) {
