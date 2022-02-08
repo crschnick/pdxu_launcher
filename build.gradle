@@ -146,21 +146,32 @@ jlink {
                 '--temp', "$buildDir/tempfiles",
                 '--resource-dir', resPath,
                 '--verbose',
-                '--copyright','(C) 2021, Christopher Schnick',
+                '--copyright','(C) 2022, Christopher Schnick',
                 '--license-file','res/license_file.txt',
                 '--vendor','Pdx-Unlimiter',
-                '--description', 'A tool aimed at improving the gameplay experience for various Paradox Games.',
+                '--description', 'A smart savegame manager, editor, and toolbox for all current major Paradox Grand Strategy games.',
                 '--file-associations', 'res/ck3.properties',
                 '--file-associations', 'res/eu4.properties',
                 '--file-associations', 'res/hoi4.properties',
                 '--file-associations', 'res/ck2.properties',
                 '--file-associations', 'res/vic2.properties',
+                '--file-associations', 'res/vic3.properties',
                 '--file-associations', 'res/sav.properties'
         )
     }
 }
 
 task createDist(type: DefaultTask)
+
+def name = System.getProperty("os.name")
+if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+    def process = new ProcessBuilder('uname', '-a')
+            .redirectErrorStream(true).start()
+    def output = process.getInputStream().readAllBytes();
+    name = new String(output)
+    process.waitFor()
+}
+def deb = name.contains('Debian') || name.contains('Ubuntu');
 
 if (os.windows) {
     task writePackageVersion(type: DefaultTask) {
@@ -209,7 +220,7 @@ if (os.windows) {
 
     }
     jpackageImage.finalizedBy(signExecutable)
-} else {
+} else if (deb) {
     task renameInstaller(type: Copy, dependsOn: jpackage) {
         from ("$buildDir/bin")
         include 'pdx-unlimiter_' + version + "-1_amd64.deb"
@@ -240,6 +251,23 @@ if (os.windows) {
                     '--linux-shortcut')
         }
     }
+} else if (os.linux && !deb) {
+    task writePackageVersion(type: DefaultTask) {
+        doLast {
+            file("${buildDir}/dist/Pdx-Unlimiter/lib/runtime/version").write(version)
+        }
+    }
+    jpackageImage.finalizedBy(writePackageVersion)
+
+    jlink {
+        jpackage {
+            installerType = 'rpm'
+            installerOptions.addAll(
+                    '--linux-shortcut')
+        }
+    }
+} else if (os.macOsX) {
+
 }
 
 createDist.finalizedBy(jpackage)
