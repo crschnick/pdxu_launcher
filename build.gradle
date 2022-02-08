@@ -252,6 +252,14 @@ if (os.windows) {
         }
     }
 } else if (os.linux && !deb) {
+    task renameInstaller(type: Copy, dependsOn: jpackage) {
+        from ("$buildDir/bin")
+        include 'pdx-unlimiter-' + version + "-1.x86_64.rpm"
+        destinationDir file("$buildDir/bin")
+        rename 'pdx-unlimiter-' + version + "-1.x86_64.rpm", 'pdxu_installer-linux.rpm'
+    }
+    jpackage.finalizedBy(renameInstaller)
+
     task writePackageVersion(type: DefaultTask) {
         doLast {
             file("${buildDir}/dist/Pdx-Unlimiter/lib/runtime/version").write(version)
