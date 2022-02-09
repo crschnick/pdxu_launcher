@@ -118,8 +118,12 @@ public class Settings {
     private static Path getUserDocumentsPath() {
         if (SystemUtils.IS_OS_WINDOWS) {
             return Path.of(FileSystemView.getFileSystemView().getDefaultDirectory().getPath());
-        } else {
+        } else if (SystemUtils.IS_OS_LINUX) {
             return Paths.get(System.getProperty("user.home"), ".local", "share");
+        } else if (SystemUtils.IS_OS_MAC) {
+            return Paths.get(System.getProperty("user.home"), "Library", "Application Support");
+        } else {
+            throw new AssertionError();
         }
     }
 
@@ -133,6 +137,16 @@ public class Settings {
 
     public Path getAppInstallPath() {
         return appInstallPath;
+    }
+
+    public Path getAppExecutable() {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            return appInstallPath.resolve(Path.of("app", "Pdx-Unlimiter.exe"));
+        } else if (SystemUtils.IS_OS_LINUX) {
+            return appInstallPath.resolve(Path.of("app", "bin", "Pdx-Unlimiter"));
+        } else {
+            return appInstallPath.resolve(Path.of("app", "Content", "MacOS", "Pdx-Unlimiter"));
+        }
     }
 
     public String getVersion() {

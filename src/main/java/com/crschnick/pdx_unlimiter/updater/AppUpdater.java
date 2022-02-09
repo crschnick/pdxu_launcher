@@ -46,9 +46,12 @@ public class AppUpdater {
                     "/C",
                     Settings.getInstance().getAppInstallPath()
                             .resolve("app").resolve("bin").resolve("pdxu.bat").toString()));
-        } else {
+        } else if (SystemUtils.IS_OS_LINUX) {
             cmdList.add(Settings.getInstance().getAppInstallPath()
                     .resolve("app").resolve("bin").resolve("pdxu").toString());
+        } else if (SystemUtils.IS_OS_MAC) {
+            cmdList.add(Settings.getInstance().getAppInstallPath()
+                    .resolve("Contents").resolve("MacOS").resolve("Pdx-Unlimiter").toString());
         }
         logger.info("Running: " + String.join(" ", cmdList));
         cmdList.addAll(Arrays.asList(args));
