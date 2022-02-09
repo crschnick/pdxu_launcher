@@ -112,7 +112,7 @@ build.dependsOn(copyOutput)
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 OperatingSystem os = DefaultNativePlatform.currentOperatingSystem;
 
-String resPath = "$projectDir/res" + (os.windows ? "/windows" : "/linux")
+String resPath = "$projectDir/res" + (os.windows ? "/windows" : (os.linux ? "/linux" : "/mac")
 
 jlink {
     imageDir = file("$buildDir/image")
@@ -285,9 +285,9 @@ if (os.windows) {
 
     jlink {
         jpackage {
-            installerType = 'rpm'
+            installerType = 'dmg'
             appVersion = "1.0.0"
-            icon = "res/mac/logo.icns"
+            icon = "$resDir/logo.icns"
             imageOptions = [
                     '--mac-package-identifier', 'com.crschnick.pdxu',
                     '--mac-package-name', 'Pdx-Unlimiter'
