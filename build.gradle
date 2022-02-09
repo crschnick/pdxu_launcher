@@ -275,7 +275,25 @@ if (os.windows) {
         }
     }
 } else if (os.macOsX) {
+    task renameInstaller(type: Copy, dependsOn: jpackage) {
+        from ("$buildDir/bin")
+        include 'pdx-unlimiter-' + version + "-1.x86_64.rpm"
+        destinationDir file("$buildDir/bin")
+        rename 'pdx-unlimiter-' + version + "-1.x86_64.rpm", 'pdxu_installer-linux.rpm'
+    }
+    jpackage.finalizedBy(renameInstaller)
 
+    jlink {
+        jpackage {
+            installerType = 'rpm'
+            appVersion = "1.0.0"
+            icon = "res/mac/logo.icns"
+            imageOptions = [
+                    '--mac-package-identifier', 'com.crschnick.pdxu',
+                    '--mac-package-name', 'Pdx-Unlimiter'
+            ]
+        }
+    }
 }
 
 createDist.finalizedBy(jpackage)
