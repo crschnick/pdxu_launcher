@@ -112,7 +112,7 @@ build.dependsOn(copyOutput)
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
 OperatingSystem os = DefaultNativePlatform.currentOperatingSystem;
 
-String resPath = "$projectDir/res" + (os.windows ? "/windows" : (os.linux ? "/linux" : "/mac")
+String resPath = "$projectDir/res" + (os.windows ? "/windows" : (os.linux ? "/linux" : "/mac"))
 
 jlink {
     imageDir = file("$buildDir/image")
@@ -277,9 +277,9 @@ if (os.windows) {
 } else if (os.macOsX) {
     task renameInstaller(type: Copy, dependsOn: jpackage) {
         from ("$buildDir/bin")
-        include 'pdx-unlimiter-' + version + "-1.x86_64.rpm"
+        include 'Pdx-Unlimiter-1.0.0.dmg'
         destinationDir file("$buildDir/bin")
-        rename 'pdx-unlimiter-' + version + "-1.x86_64.rpm", 'pdxu_installer-linux.rpm'
+        rename 'Pdx-Unlimiter-1.0.0.dmg', 'pdxu_installer.dmg'
     }
     jpackage.finalizedBy(renameInstaller)
 
@@ -287,7 +287,7 @@ if (os.windows) {
         jpackage {
             installerType = 'dmg'
             appVersion = "1.0.0"
-            icon = "$resDir/logo.icns"
+            icon = "$resPath/logo.icns"
             imageOptions = [
                     '--mac-package-identifier', 'com.crschnick.pdxu',
                     '--mac-package-name', 'Pdx-Unlimiter'
