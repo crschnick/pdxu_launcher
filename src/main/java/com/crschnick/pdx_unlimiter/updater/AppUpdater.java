@@ -42,10 +42,8 @@ public class AppUpdater {
         List<String> cmdList = new ArrayList<>();
         if (SystemUtils.IS_OS_WINDOWS) {
             cmdList.addAll(List.of(
-                    "cmd.exe",
-                    "/C",
                     Settings.getInstance().getAppInstallPath()
-                            .resolve("app").resolve("bin").resolve("pdxu.bat").toString()));
+                            .resolve("app").resolve("Pdx-Unlimiter.exe").toString()));
         } else if (SystemUtils.IS_OS_LINUX) {
             cmdList.add(Settings.getInstance().getAppInstallPath()
                     .resolve("app").resolve("bin").resolve("pdxu").toString());
@@ -53,8 +51,8 @@ public class AppUpdater {
             cmdList.add(Settings.getInstance().getAppInstallPath()
                     .resolve("Contents").resolve("MacOS").resolve("Pdx-Unlimiter").toString());
         }
-        logger.info("Running: " + String.join(" ", cmdList));
         cmdList.addAll(Arrays.asList(args));
+        logger.info("Running: " + String.join(" ", cmdList));
         new ProcessBuilder(cmdList).start();
     }
 
